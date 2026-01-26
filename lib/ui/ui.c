@@ -4,6 +4,7 @@
 #include "ui.h"
 
 void set_brightness(int32_t value);
+void report_brightness(int32_t value);
 
 static lv_obj_t *brightness_label;
 
@@ -12,6 +13,7 @@ static void brightness_slider_event_cb(lv_event_t *e)
     lv_obj_t *slider = (lv_obj_t *)lv_event_get_target(e);
     int32_t value = lv_slider_get_value(slider);
     set_brightness(value);
+    report_brightness(value);
     lv_label_set_text_fmt(brightness_label, "Brillo: %d", value);
 }
 

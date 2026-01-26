@@ -24,6 +24,9 @@ static wl_status_t wifi_status = WL_STOPPED;
 
 extern PicoMQTT::Server mqtt;
 
+void setup_ble(void);
+void process_ble(void);
+
 void setup()
 {
   Serial.begin(115200);
@@ -37,19 +40,9 @@ void setup()
   ui_init();
 
   WiFi.setPins(SDIO2_CLK, SDIO2_CMD, SDIO2_D0, SDIO2_D1, SDIO2_D2, SDIO2_D3, SDIO2_RST);
-  // Release SD Pins from whatever
-  gpio_reset_pin((gpio_num_t)39);
-  gpio_reset_pin((gpio_num_t)40);
-  gpio_reset_pin((gpio_num_t)41);
-  gpio_reset_pin((gpio_num_t)42);
-  gpio_reset_pin((gpio_num_t)43);
-  gpio_reset_pin((gpio_num_t)44);
-
   WiFi.STA.begin();
 
   WiFi.STA.connect(WIFI_SSID, WIFI_PASS);
-  // Set SD_MMC Pins
-  SD_MMC.setPins(43, 44, 39, 40, 41, 42);
 }
 
 void loop()
@@ -71,6 +64,7 @@ void loop()
         // on the ESP-Hosted co-processor
         ESP.restart();
       }
+      setup_ble();
       if (MDNS.begin(hostname))
       {
         MDNS.addService("mqtt", "tcp", MQTT_PORT);
@@ -96,6 +90,7 @@ void loop()
   }
 
   display_update();
+  process_ble();
   mqtt.loop();
   delay(1);
 }

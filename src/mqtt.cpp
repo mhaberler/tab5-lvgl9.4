@@ -1,5 +1,6 @@
 #include <PicoMQTT.h>
 #include <PicoWebsocket.h>
+#include <ArduinoJson.h>
 
 WiFiServer tcp_server(MQTT_PORT);
 WiFiServer websocket_underlying_server(MQTTWS_PORT);
@@ -45,3 +46,15 @@ protected:
 };
 
 CustomMQTTServer mqtt(tcp_server, websocket_server);
+
+extern "C"
+{
+    void report_brightness(int32_t value)
+    {
+        JsonDocument output;
+        output["level"] = value;
+        auto publish = mqtt.begin_publish("brightness", measureJson(output));
+        serializeJson(output, publish);
+        publish.send();
+    }
+}
