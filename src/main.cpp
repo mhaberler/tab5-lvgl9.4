@@ -1,6 +1,3 @@
-#undef CORE_DEBUG_LEVEL
-#define CORE_DEBUG_LEVEL 4  // Custom level for this file only
-
 #include <lvgl.h>
 #include <M5Unified.h>
 #include <ESPmDNS.h>
@@ -42,6 +39,7 @@ void setup() {
                  BOARD_SDIO_ESP_HOSTED_RESET);
 #endif
     WiFi.STA.begin();
+    log_w("connecting to SSID %s", WIFI_SSID);
     WiFi.STA.connect(WIFI_SSID, WIFI_PASS);
     bleScanner.begin(4096, 15000, 100, 99, 4096, 1, MALLOC_CAP_SPIRAM);
 }
@@ -53,7 +51,7 @@ void loop() {
         wifi_status = ws; // track changes
         switch (ws) {
             case WL_CONNECTED:
-                log_i("WiFi: Connected, IP: %s", WiFi.STA.localIP().toString().c_str());
+                log_w("WiFi: Connected, IP: %s", WiFi.STA.localIP().toString().c_str());
 
                 if (updateEspHostedSlave()) {
                     // Restart the host ESP32 after successful update
@@ -72,13 +70,13 @@ void loop() {
                 mqtt.begin();
                 break;
             case WL_NO_SSID_AVAIL:
-                log_i("WiFi: SSID %s not found", WIFI_SSID);
+                log_w("WiFi: SSID %s not found", WIFI_SSID);
                 break;
             case WL_DISCONNECTED:
-                log_i("WiFi: disconnected");
+                log_w("WiFi: disconnected");
                 break;
             default:
-                log_i("WiFi status: %d", ws);
+                log_w("WiFi status: %d", ws);
                 break;
         }
         delay(300);

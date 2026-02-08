@@ -1,6 +1,3 @@
-#undef CORE_DEBUG_LEVEL
-#define CORE_DEBUG_LEVEL 4  // Custom level for this file only
-
 #include "BLEScanner.h"
 
 #include <Arduino.h>
@@ -69,6 +66,25 @@ static inline uint32_t getUint32LE(const std::vector<uint8_t> &data, int index) 
                       (data[index + 1] << 8) |
                       (data[index + 2] << 16) |
                       (data[index + 3] << 24));
+}
+
+static inline int8_t getInt8(const std::vector<uint8_t> &data, int index) {
+    return (int8_t)data[index];
+}
+
+static inline uint8_t getUint8(const std::vector<uint8_t> &data, int index) {
+    return data[index];
+}
+
+static inline float convert_8_8_to_float(const std::vector<uint8_t> &data, int index) {
+    // 8.8 to float converter
+    auto frac = getUint8(data, index);
+    auto base = getUint8(data, index+1);
+    if (frac == 0xFF && base == 0xFF) {
+        return 0.0f;
+    } else {
+        return (float)base + ((float)frac / 256.0f);
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -279,14 +295,14 @@ static bool decodeOtodata(const std::vector<uint8_t> &data, JsonDocument &json) 
             json["status"] = getUint16LE(data, 13);
             break;
         case 24: {
-            json["dev"] = "Otodata";
-            char buffer[12];
-            utoa(getUint32LE(data, 9), buffer, 10);
-            json["serial"] = buffer;
-            utoa(getUint16LE(data, 21), buffer, 10);
-            json["model"] = buffer;
-            break;
-        }
+                json["dev"] = "Otodata";
+                char buffer[12];
+                utoa(getUint32LE(data, 9), buffer, 10);
+                json["serial"] = buffer;
+                utoa(getUint16LE(data, 21), buffer, 10);
+                json["model"] = buffer;
+                break;
+            }
         default:
             return false;
     }
@@ -294,7 +310,7 @@ static bool decodeOtodata(const std::vector<uint8_t> &data, JsonDocument &json) 
 }
 
 static bool decodeRotarexELG(const std::vector<uint8_t> &data, JsonDocument &json,
-                              JsonObject BLEdata) {
+                             JsonObject BLEdata) {
     if (data.size() != 12)
         return false;
 
@@ -321,16 +337,67 @@ static bool decodeRotarexELG(const std::vector<uint8_t> &data, JsonDocument &jso
     return true;
 }
 
+// assumes Mikrotik advertisements, no encryption
+static bool decodeMikrotik(const std::vector<uint8_t> &data, JsonDocument &json) {
+    if (data.size() != 20)
+        return false;
+    int16_t t = getInt16LE(data, 12);
+    if (t != -32768) { // 0x8000 -> temp is unsupported (indoor)
+        json["dev"] = "Mikrotik TG-BT5-OUT";
+        json["tempc"] = t / 256.0;
+    } else {
+        json["dev"] = "Mikrotik TG-BT5-IN";
+    }
+    json["version"] = getUint8(data, 2);
+    auto user = getUint8(data, 3);
+    if (user & 0x01) {
+        json["encrypted"] = true;
+    } else {
+        json["salt"] = getUint16LE(data, 4);;
+        json["accx"] = convert_8_8_to_float(data, 6);
+        json["accy"] = convert_8_8_to_float(data, 8);
+        json["accz"] = convert_8_8_to_float(data, 10);
+
+        // uptime (4 bytes, little-endian)
+        json["uptime"] = getUint32LE(data, 14);
+
+        // flags (1 byte)
+        uint8_t flags = getUint8(data, 18);
+        if (flags & 1) {
+            json["reed_switch"] = true;
+        }
+        if (flags & 2) {
+            json["accel_tilt"] = true;
+        }
+        if (flags & 4) {
+            json["accel_drop"] = true;
+        }
+        if (flags & 8) {
+            json["impact_x"] = true;
+        }
+        if (flags & 16) {
+            json["impact_y"] = true;
+        }
+        if (flags & 32) {
+            json["impact_z"] = true;
+        }
+        // battery (1 byte)
+        uint8_t batt = getUint8(data, 19);
+        json["batt"] = batt;
+    }
+    return true;
+}
+
 static bool decodeBTHome(JsonObject BLEdata, JsonDocument &json,
-                          BTHomeDecoder &decoder, const char *key) {
+                         BTHomeDecoder &decoder, const char *key) {
     std::vector<uint8_t> sd;
     if (!hexStringToVector(BLEdata["sd"], sd))
         return false;
 
     BTHomeDecodeResult bthRes = decoder.parseBTHomeV2(
-        std::string(sd.begin(), sd.end()),
-        BLEdata["mac"],
-        key);
+                                    std::string(sd.begin(), sd.end()),
+                                    BLEdata["mac"],
+                                    key);
 
     if (bthRes.isBTHome && bthRes.decryptionSucceeded) {
         JsonObject root = json.to<JsonObject>();
@@ -501,20 +568,35 @@ bool BLEScanner::deliver(JsonDocument &rawDoc, JsonDocument &outDoc) {
     std::vector<uint8_t> mfd;
 
     if (rawDoc.containsKey("svduuid") &&
-        String(rawDoc["svduuid"]).indexOf("fcd2") != -1) {
+            String(rawDoc["svduuid"]).indexOf("fcd2") != -1) {
         decoded = decodeBTHome(rawDoc.as<JsonObject>(), outDoc,
                                _impl->bthDecoder, _impl->bthKey);
     } else if (rawDoc.containsKey("mfd")) {
         if (hexStringToVector(rawDoc["mfd"], mfd) && mfd.size() >= 2) {
             uint16_t mfid = mfd[1] << 8 | mfd[0];
             switch (mfid) {
-                case 0x0499: decoded = decodeRuuvi(mfd, outDoc);      break;
-                case 0x0059: decoded = decodeMopeka(mfd, outDoc);     break;
-                case 0x0100: decoded = decodeTPMS100(mfd, outDoc);    break;
-                case 0x00AC: decoded = decodeTPMS00AC(mfd, outDoc);   break;
-                case 0x03B1: decoded = decodeOtodata(mfd, outDoc);    break;
-                case 0xffff: decoded = decodeRotarexELG(mfd, outDoc,
-                                           rawDoc.as<JsonObject>());  break;
+                case 0x0499:
+                    decoded = decodeRuuvi(mfd, outDoc);
+                    break;
+                case 0x0059:
+                    decoded = decodeMopeka(mfd, outDoc);
+                    break;
+                case 0x0100:
+                    decoded = decodeTPMS100(mfd, outDoc);
+                    break;
+                case 0x00AC:
+                    decoded = decodeTPMS00AC(mfd, outDoc);
+                    break;
+                case 0x03B1:
+                    decoded = decodeOtodata(mfd, outDoc);
+                    break;
+                case 0xffff:
+                    decoded = decodeRotarexELG(mfd, outDoc,
+                                               rawDoc.as<JsonObject>());
+                    break;
+                case  0x094f:
+                    decoded = decodeMikrotik(mfd, outDoc);
+                    break;
             }
         }
     }
