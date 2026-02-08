@@ -7,7 +7,7 @@ A PlatformIO-based firmware for the ESP32-P4 that integrates LVGL 9.4 GUI, WiFi 
 This project provides a complete embedded solution featuring:
 - **LVGL 9.4 GUI** - Modern graphical interface with M5Stack display support
 - **MQTT Broker** - Embedded MQTT broker with TCP and WebSocket support
-- **BLE Scanner** - Bluetooth Low Energy device detection and advertisement parsing
+- **BLE Scanner** - Singleton BLEScanner class for device detection and advertisement parsing with support for Ruuvi, Mopeka, TPMS, Otodata, Rotarex, and BTHome devices
 - **WiFi Connectivity** - Station mode with mDNS service discovery
 - **OTA Updates** - ESP-Hosted co-processor firmware updates
 
@@ -42,9 +42,12 @@ This project provides a complete embedded solution featuring:
 │       ├── ui.c
 │       └── ui.h
 ├── src/
-│   ├── blescan.cpp         # BLE scanning and advertisement processing
-│   ├── broker.hpp          # MQTT broker definitions
-│   ├── fmicro.h            # Utility headers
+│   ├── BLEScanner.cpp      # BLE scanning and advertisement processing (singleton class)
+│   ├── BLEScanner.h        # BLEScanner class header
+│   ├── BTHomeDecoder.cpp   # BTHome protocol decoder
+│   ├── BTHomeDecoder.h     # BTHome decoder header
+│   ├── broker.hpp          # MQTT broker utilities
+│   ├── fmicro.h            # Firmware micro definitions
 │   ├── main.cpp            # Main application entry point
 │   ├── mqtt.cpp            # Custom MQTT server implementation
 │   └── ringbuffer.hpp      # Ring buffer for BLE data
@@ -61,11 +64,13 @@ This project provides a complete embedded solution featuring:
 - mDNS service advertisement (`picomqtt.local`)
 
 ### BLE Scanner
-- Continuous BLE device scanning
-- Parses device advertisements
-- Extracts MAC addresses, RSSI, names, and manufacturer data
-- JSON-based data format
-- Ring buffer for advertisement queuing
+- Singleton `BLEScanner` class for BLE device scanning
+- Configurable scan parameters (time, active/passive, ring buffer size/capacity)
+- Supports multiple BLE device types: Ruuvi, Mopeka, TPMS, Otodata, Rotarex, BTHome
+- JSON-based data format with device-specific decoding
+- Ring buffer for advertisement queuing with high water mark tracking
+- Performance statistics (received/decoded counts, buffer usage)
+- MQTT stats publishing to `ble/$stats` topic
 
 ### Display & UI
 - LVGL 9.4 integration
@@ -112,6 +117,7 @@ pio device monitor --environment esp32p4_pioarduino
 - **[PicoMQTT](https://github.com/mlesniew/PicoMQTT)** - Lightweight MQTT broker
 - **[PicoWebsocket](https://github.com/mlesniew/PicoWebsocket)** - WebSocket server
 - **[ArduinoJson](https://github.com/bblanchon/ArduinoJson)** - JSON parsing
+- **[BTHomeDecoder](https://github.com/mhaberler/BTHomeDecoder)** - BTHome protocol decoder
 
 ## Configuration
 
@@ -144,15 +150,22 @@ client.connect({onSuccess: () => console.log("Connected!")});
 
 ### BLE Advertisement Format
 
-BLE scan results are formatted as JSON:
+BLE scan results are formatted as JSON with device-specific decoded data:
 ```json
 {
-  "id": "AA:BB:CC:DD:EE:FF",
+  "mac": "AA:BB:CC:DD:EE:FF",
   "rssi": -65,
   "name": "Device Name",
-  "manufacturerdata": "0102030405"
+  "manufacturerdata": "0102030405",
+  "decoded": {
+    "temperature": 23.5,
+    "humidity": 45.2,
+    "battery": 85
+  }
 }
 ```
+
+Supported device types include RuuviTag environmental sensors, Mopeka propane tank monitors, TPMS tire pressure systems, and BTHome v2 devices.
 
 ## Development
 
@@ -166,8 +179,10 @@ BLE scan results are formatted as JSON:
 - Available hooks: `on_connected`, `on_disconnected`, `on_subscribe`, `on_message`
 
 ### BLE Data Processing
-- Modify [blescan.cpp](src/blescan.cpp) callback `onResult()` for custom parsing
-- Adjust `BLE_ADV_QUEUELEN` for queue size
+- Use `BLEScanner::instance().process(jsonDoc, mac)` to dequeue and decode advertisements
+- Configure scanner with `BLEScanner::instance().begin(ringBufSize, scanTimeMs, activeScan, bthKey, ringBufCap)`
+- Access stats via `BLEScanner::instance().stats()` for monitoring
+- Supported decoders: RuuviTag, Mopeka sensors, TPMS (various), Otodata, Rotarex ELG, BTHome v2
 
 ## Troubleshooting
 
@@ -194,3 +209,4 @@ Michael Haberler, based on https://github.com/fermintm/M5stack-TAB5-LVGL-9.4
 - ESP32-P4 platform by [pioarduino](https://github.com/pioarduino)
 - LVGL team for the excellent GUI library
 - M5Stack for hardware support libraries
+- BTHome decoder from https://github.com/fredriknk/BTHomeDecoder

@@ -9,6 +9,7 @@
 
 #include "display_driver.h"
 #include "ui.h"
+#include "BLEScanner.h"
 
 // SDIO pins for Tab5
 #define SDIO2_CLK GPIO_NUM_12
@@ -24,73 +25,96 @@ static wl_status_t wifi_status = WL_STOPPED;
 
 extern PicoMQTT::Server mqtt;
 
-void setup_ble(void);
-void process_ble(void);
+static auto &scanner = BLEScanner::instance();
 
-void setup()
-{
-  Serial.begin(115200);
+void setup() {
+    Serial.begin(115200);
 
-  auto cfg = M5.config();
-  M5.begin(cfg);
-  M5.Display.setRotation(3);
-  delay(100);
-  display_init();
-  M5.Display.setBrightness(200);
-  ui_init();
+    auto cfg = M5.config();
+    M5.begin(cfg);
+    M5.Display.setRotation(3);
+    delay(100);
+    display_init();
+    M5.Display.setBrightness(200);
+    ui_init();
 
-  WiFi.setPins(SDIO2_CLK, SDIO2_CMD, SDIO2_D0, SDIO2_D1, SDIO2_D2, SDIO2_D3, SDIO2_RST);
-  WiFi.STA.begin();
+    WiFi.setPins(SDIO2_CLK, SDIO2_CMD, SDIO2_D0, SDIO2_D1, SDIO2_D2, SDIO2_D3, SDIO2_RST);
+    WiFi.STA.begin();
 
-  WiFi.STA.connect(WIFI_SSID, WIFI_PASS);
+    WiFi.STA.connect(WIFI_SSID, WIFI_PASS);
 }
 
-void loop()
-{
-  M5.update();
-  wl_status_t ws = WiFi.STA.status();
-  if (ws ^ wifi_status)
-  {
-    wifi_status = ws; // track changes
-    switch (ws)
-    {
-    case WL_CONNECTED:
-      log_i("WiFi: Connected, IP: %s", WiFi.STA.localIP().toString().c_str());
+void loop() {
+    M5.update();
+    wl_status_t ws = WiFi.STA.status();
+    if (ws ^ wifi_status) {
+        wifi_status = ws; // track changes
+        switch (ws) {
+            case WL_CONNECTED:
+                log_i("WiFi: Connected, IP: %s", WiFi.STA.localIP().toString().c_str());
 
-      if (updateEspHostedSlave())
-      {
-        // Restart the host ESP32 after successful update
-        // This is currently required to properly activate the new firmware
-        // on the ESP-Hosted co-processor
-        ESP.restart();
-      }
-      setup_ble();
-      if (MDNS.begin(hostname))
-      {
-        MDNS.addService("mqtt", "tcp", MQTT_PORT);
-        MDNS.addService("mqtt-ws", "tcp", MQTTWS_PORT);
-        MDNS.addServiceTxt("mqtt-ws", "tcp", "path", "/mqtt");
-        mdns_service_instance_name_set("_mqtt", "_tcp", "PicoMQTT TCP broker");
-        mdns_service_instance_name_set("_mqtt-ws", "_tcp",
-                                       "PicoMQTT Websockets broker");
-      }
-      mqtt.begin();
-      break;
-    case WL_NO_SSID_AVAIL:
-      log_i("WiFi: SSID %s not found", WIFI_SSID);
-      break;
-    case WL_DISCONNECTED:
-      log_i("WiFi: disconnected");
-      break;
-    default:
-      log_i("WiFi status: %d", ws);
-      break;
+                if (updateEspHostedSlave()) {
+                    // Restart the host ESP32 after successful update
+                    // This is currently required to properly activate the new firmware
+                    // on the ESP-Hosted co-processor
+                    ESP.restart();
+                }
+                if (MDNS.begin(hostname)) {
+                    MDNS.addService("mqtt", "tcp", MQTT_PORT);
+                    MDNS.addService("mqtt-ws", "tcp", MQTTWS_PORT);
+                    MDNS.addServiceTxt("mqtt-ws", "tcp", "path", "/mqtt");
+                    mdns_service_instance_name_set("_mqtt", "_tcp", "PicoMQTT TCP broker");
+                    mdns_service_instance_name_set("_mqtt-ws", "_tcp",
+                                                   "PicoMQTT Websockets broker");
+                }
+                scanner.begin(4096, 15000, 100, 99, 4096, 1, MALLOC_CAP_SPIRAM);
+
+                mqtt.begin();
+                break;
+            case WL_NO_SSID_AVAIL:
+                log_i("WiFi: SSID %s not found", WIFI_SSID);
+                break;
+            case WL_DISCONNECTED:
+                log_i("WiFi: disconnected");
+                break;
+            default:
+                log_i("WiFi status: %d", ws);
+                break;
+        }
+        delay(300);
     }
-    delay(300);
-  }
 
-  display_update();
-  process_ble();
-  mqtt.loop();
-  delay(1);
+    display_update();
+    {
+        JsonDocument doc;
+        char mac[16];
+        if (scanner.process(doc, mac, sizeof(mac))) {
+            String topic = String("ble/") + mac;
+            auto publish = mqtt.begin_publish(topic.c_str(), measureJson(doc));
+            serializeJson(doc, publish);
+            publish.send();
+        }
+    }
+    {
+        static BLEScanner::Stats lastStats = {};
+        auto st = scanner.stats();
+        if (st.hwmBytes > lastStats.hwmBytes ||
+                st.queueFull > lastStats.queueFull ||
+                st.acquireFail > lastStats.acquireFail ||
+                st.received > lastStats.received ||
+                st.decoded > lastStats.decoded) {
+            lastStats = st;
+            JsonDocument sdoc;
+            sdoc["hwm"] = st.hwmPercent;
+            sdoc["qfull"] = st.queueFull;
+            sdoc["afail"] = st.acquireFail;
+            sdoc["rx"] = st.received;
+            sdoc["dec"] = st.decoded;
+            auto publish = mqtt.begin_publish("ble/$stats", measureJson(sdoc));
+            serializeJson(sdoc, publish);
+            publish.send();
+        }
+    }
+    mqtt.loop();
+    delay(1);
 }

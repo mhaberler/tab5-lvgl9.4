@@ -17,12 +17,16 @@ class RingBuffer {
 #else
         h = xRingbufferCreate(sz, type);
 #endif
-        }
+        total_size = sz;
+        high_watermark = 0;
+    }
 
-        void create(size_t sz, RingbufferType_t type,
-                    uint8_t* pucRingbufferStorage,
-                    StaticRingbuffer_t* pxStaticRingbuffer) {
+    void create(size_t sz, RingbufferType_t type,
+                uint8_t* pucRingbufferStorage,
+                StaticRingbuffer_t* pxStaticRingbuffer) {
         h = xRingbufferCreateStatic(sz, type, pucRingbufferStorage, pxStaticRingbuffer);
+        total_size = sz;
+        high_watermark = 0;
     }
 
     void free() {
@@ -69,12 +73,37 @@ class RingBuffer {
         vRingbufferReturnItemFromISR(h, pvItem, pxHigherPriorityTaskWoken);
     }
 
+    size_t get_current_usage() const {
+        return total_size - xRingbufferGetCurFreeSize(h);
+    }
+
+    size_t get_high_watermark() const {
+        return high_watermark;
+    }
+
+    size_t get_total_size() const {
+        return total_size;
+    }
+
+    void update_high_watermark() {
+        size_t current_usage = get_current_usage();
+        if (current_usage > high_watermark) {
+            high_watermark = current_usage;
+        }
+    }
+
+    void reset_high_watermark() {
+        high_watermark = 0;
+    }
+
     operator RingbufHandle_t() const {
         return h;
     }
 
   private:
     RingbufHandle_t h;
+    size_t total_size;
+    size_t high_watermark;
 
 };
 
