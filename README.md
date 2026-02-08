@@ -89,9 +89,10 @@ This project provides a complete embedded solution featuring:
 Set these environment variables before building:
 
 ```bash
-export WIFI_SSID2="your_wifi_ssid"
-export WIFI_PASSWORD2="your_wifi_password"
+export WIFI_SSID="your_wifi_ssid"
+export WIFI_PASSWORD="your_wifi_password"
 ```
+or edit the credentials section.
 
 ## Building
 
@@ -122,16 +123,8 @@ pio device monitor --environment esp32p4_pioarduino
 ## Configuration
 
 ### Build Flags
-- `CORE_DEBUG_LEVEL=3` - Verbose logging
-- `CUSTOM_ARDUINO_LOOP_STACK_SIZE=32768` - Increased stack size
-- `BOARD_HAS_PSRAM` - PSRAM support enabled
+- `CORE_DEBUG_LEVEL=2` - log level
 - `LV_CONF_INCLUDE_SIMPLE` - LVGL configuration
-
-### Debug Settings
-- **Debug Tool**: esp-builtin
-- **Initial Break**: `tbreak setup`
-- **Monitor Speed**: 115200 baud
-- **Upload Speed**: 1500000 baud
 
 ## Usage
 
@@ -156,7 +149,7 @@ BLE scan results are formatted as JSON with device-specific decoded data:
   "mac": "AA:BB:CC:DD:EE:FF",
   "rssi": -65,
   "name": "Device Name",
-  "manufacturerdata": "0102030405",
+  "mfd": "0102030405",
   "decoded": {
     "temperature": 23.5,
     "humidity": 45.2,
@@ -200,6 +193,23 @@ Supported device types include RuuviTag environmental sensors, Mopeka propane ta
 - Verify M5Stack initialization in [main.cpp](src/main.cpp)
 - Check LVGL buffer configuration in [lv_conf.h](include/lv_conf.h)
 - Adjust brightness value in `setup()`
+
+## Related projects
+- Arduino:
+  https://github.com/fermintm/M5stack-TAB5-LVGL-9.4
+  https://github.com/3110/m5stack-platformio-boilerplate-code
+  https://github.com/nikthefix/M5Stack_Tab5_Arduino_Basic_LVGL_Demo
+  https://github.com/tobozo/M5Tab5-Game-and-Watch/tree/main
+  sound: https://github.com/ns96/CardputerMicTalk/blob/2c6c1e4eccead45483e14ee0380472310fe5fd44/Tab5MicTalk/Tab5MicTalk.ino#L8
+  https://github.com/anuj01/Tab5-PIO/
+  https://github.com/synqing/K1.tab5/
+  https://github.com/brandon-kim/M5Tab-Macintosh
+
+- ESP-IDF:
+  https://github.com/netseye/m5stack-tab5-lvgl/tree/feature/mp3player
+  https://github.com/synqing/Tab5.DSP
+
+
 
 ## Authors
 

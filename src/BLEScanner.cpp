@@ -1,3 +1,6 @@
+#undef CORE_DEBUG_LEVEL
+#define CORE_DEBUG_LEVEL 4  // Custom level for this file only
+
 #include "BLEScanner.h"
 
 #include <Arduino.h>
@@ -321,7 +324,7 @@ static bool decodeRotarexELG(const std::vector<uint8_t> &data, JsonDocument &jso
 static bool decodeBTHome(JsonObject BLEdata, JsonDocument &json,
                           BTHomeDecoder &decoder, const char *key) {
     std::vector<uint8_t> sd;
-    if (!hexStringToVector(BLEdata["servicedata"], sd))
+    if (!hexStringToVector(BLEdata["sd"], sd))
         return false;
 
     BTHomeDecodeResult bthRes = decoder.parseBTHomeV2(
@@ -368,23 +371,23 @@ class ScanCallback : public BLEAdvertisedDeviceCallbacks {
         if (advertisedDevice.haveManufacturerData()) {
             String hexData;
             stringToHexString(advertisedDevice.getManufacturerData(), hexData);
-            BLEdata["manufacturerdata"] = hexData;
+            BLEdata["mfd"] = hexData;
         }
 
         if (advertisedDevice.haveServiceUUID())
-            BLEdata["serviceuuid"] = (char *)advertisedDevice.getServiceUUID().toString().c_str();
+            BLEdata["svcuuid"] = (char *)advertisedDevice.getServiceUUID().toString().c_str();
 
         int sdCount = advertisedDevice.getServiceDataUUIDCount();
         if (sdCount > 0) {
             int idx = sdCount - 1;
-            BLEdata["servicedatauuid"] = (char *)advertisedDevice.getServiceDataUUID(idx).toString().c_str();
+            BLEdata["svduuid"] = (char *)advertisedDevice.getServiceDataUUID(idx).toString().c_str();
             String hexData;
             stringToHexString(advertisedDevice.getServiceData(idx), hexData);
-            BLEdata["servicedata"] = hexData;
+            BLEdata["sd"] = hexData;
         }
 
         if (advertisedDevice.haveTXPower())
-            BLEdata["txpower"] = (int8_t)advertisedDevice.getTXPower();
+            BLEdata["txpwr"] = (int8_t)advertisedDevice.getTXPower();
 
         BLEdata["time"] = fseconds();
 
@@ -423,7 +426,7 @@ static void scanTask(void *param) {
 
     while (true) {
         BLEScanResults *foundDevices = impl->pBLEScan->start(impl->scanTimeMs / 1000, false);
-        log_i("Devices found: %d", foundDevices->getCount());
+        log_d("Devices found: %d", foundDevices->getCount());
         impl->pBLEScan->clearResults();
         delay(1);
     }
@@ -497,12 +500,12 @@ bool BLEScanner::deliver(JsonDocument &rawDoc, JsonDocument &outDoc) {
     bool decoded = false;
     std::vector<uint8_t> mfd;
 
-    if (rawDoc.containsKey("servicedatauuid") &&
-        String(rawDoc["servicedatauuid"]).indexOf("fcd2") != -1) {
+    if (rawDoc.containsKey("svduuid") &&
+        String(rawDoc["svduuid"]).indexOf("fcd2") != -1) {
         decoded = decodeBTHome(rawDoc.as<JsonObject>(), outDoc,
                                _impl->bthDecoder, _impl->bthKey);
-    } else if (rawDoc.containsKey("manufacturerdata")) {
-        if (hexStringToVector(rawDoc["manufacturerdata"], mfd) && mfd.size() >= 2) {
+    } else if (rawDoc.containsKey("mfd")) {
+        if (hexStringToVector(rawDoc["mfd"], mfd) && mfd.size() >= 2) {
             uint16_t mfid = mfd[1] << 8 | mfd[0];
             switch (mfid) {
                 case 0x0499: decoded = decodeRuuvi(mfd, outDoc);      break;
@@ -548,8 +551,8 @@ bool BLEScanner::process(JsonDocument &doc, char *mac, size_t macLen) {
         outDoc["rssi"] = rawDoc["rssi"];
         if (rawDoc.containsKey("name"))
             outDoc["name"] = rawDoc["name"];
-        if (rawDoc.containsKey("txpower"))
-            outDoc["txpower"] = rawDoc["txpower"];
+        if (rawDoc.containsKey("txpwr"))
+            outDoc["txpwr"] = rawDoc["txpwr"];
     }
 
     // Extract MAC (strip colons)

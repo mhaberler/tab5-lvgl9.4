@@ -1,3 +1,6 @@
+#undef CORE_DEBUG_LEVEL
+#define CORE_DEBUG_LEVEL 4  // Custom level for this file only
+
 #include <lvgl.h>
 #include <M5Unified.h>
 #include <ESPmDNS.h>
@@ -6,42 +9,41 @@
 #include <WiFi.h>
 #include "ESP_HostedOTA.h"
 #include <SD_MMC.h>
-
-#include "display_driver.h"
-#include "ui.h"
 #include "BLEScanner.h"
 
-// SDIO pins for Tab5
-#define SDIO2_CLK GPIO_NUM_12
-#define SDIO2_CMD GPIO_NUM_13
-#define SDIO2_D0 GPIO_NUM_11
-#define SDIO2_D1 GPIO_NUM_10
-#define SDIO2_D2 GPIO_NUM_9
-#define SDIO2_D3 GPIO_NUM_8
-#define SDIO2_RST GPIO_NUM_15
+#ifdef LVGL_UI
+    #include "display_driver.h"
+    #include "ui.h"
+#endif
 
-static const char *hostname = "picomqtt";
+static const char *hostname = HOSTNAME;
 static wl_status_t wifi_status = WL_STOPPED;
 
 extern PicoMQTT::Server mqtt;
 
-static auto &scanner = BLEScanner::instance();
+static auto &bleScanner = BLEScanner::instance();
 
 void setup() {
     Serial.begin(115200);
-
     auto cfg = M5.config();
     M5.begin(cfg);
+#ifdef  HAS_DISPLAY
     M5.Display.setRotation(3);
+    M5.Display.setBrightness(200);
+#ifdef LVGL_UI
     delay(100);
     display_init();
-    M5.Display.setBrightness(200);
     ui_init();
-
-    WiFi.setPins(SDIO2_CLK, SDIO2_CMD, SDIO2_D0, SDIO2_D1, SDIO2_D2, SDIO2_D3, SDIO2_RST);
+#endif
+#endif
+#ifdef BOARD_HAS_SDIO_ESP_HOSTED
+    WiFi.setPins(BOARD_SDIO_ESP_HOSTED_CLK, BOARD_SDIO_ESP_HOSTED_CMD, BOARD_SDIO_ESP_HOSTED_D0,
+                 BOARD_SDIO_ESP_HOSTED_D1, BOARD_SDIO_ESP_HOSTED_D2, BOARD_SDIO_ESP_HOSTED_D3,
+                 BOARD_SDIO_ESP_HOSTED_RESET);
+#endif
     WiFi.STA.begin();
-
     WiFi.STA.connect(WIFI_SSID, WIFI_PASS);
+    bleScanner.begin(4096, 15000, 100, 99, 4096, 1, MALLOC_CAP_SPIRAM);
 }
 
 void loop() {
@@ -67,8 +69,6 @@ void loop() {
                     mdns_service_instance_name_set("_mqtt-ws", "_tcp",
                                                    "PicoMQTT Websockets broker");
                 }
-                scanner.begin(4096, 15000, 100, 99, 4096, 1, MALLOC_CAP_SPIRAM);
-
                 mqtt.begin();
                 break;
             case WL_NO_SSID_AVAIL:
@@ -83,12 +83,13 @@ void loop() {
         }
         delay(300);
     }
-
+#ifdef LVGL_UI
     display_update();
+#endif
     {
         JsonDocument doc;
         char mac[16];
-        if (scanner.process(doc, mac, sizeof(mac))) {
+        if (bleScanner.process(doc, mac, sizeof(mac))) {
             String topic = String("ble/") + mac;
             auto publish = mqtt.begin_publish(topic.c_str(), measureJson(doc));
             serializeJson(doc, publish);
@@ -97,7 +98,7 @@ void loop() {
     }
     {
         static BLEScanner::Stats lastStats = {};
-        auto st = scanner.stats();
+        auto st = bleScanner.stats();
         if (st.hwmBytes > lastStats.hwmBytes ||
                 st.queueFull > lastStats.queueFull ||
                 st.acquireFail > lastStats.acquireFail ||
@@ -116,5 +117,5 @@ void loop() {
         }
     }
     mqtt.loop();
-    delay(1);
+    yield();
 }
