@@ -3,6 +3,7 @@
 #include <Adafruit_Sensor.h>
 #include "Adafruit_BMP5xx.h"
 #include <LPS22DFSensor.h>
+#include <Dps3xx.h>
 
 Adafruit_BMP5xx bmp581; // Create BMP5xx object
 bmp5xx_powermode_t desiredMode = BMP5XX_POWERMODE_NORMAL;
@@ -12,6 +13,7 @@ Adafruit_Sensor *bmp_temp = NULL;
 Adafruit_Sensor *bmp_pressure = NULL;
 
 LPS22DFSensor *lps22;
+Dps3xx Dps3xxPressureSensor = Dps3xx();
 
 
 void scanI2C(m5::I2C_Class* scanWire) {
@@ -69,10 +71,27 @@ void lps22_init(TwoWire& wire, uint8_t address ) {
     }
 }
 
+void dps368_init(TwoWire& wire, uint8_t address ) {
+    Dps3xxPressureSensor.begin(wire, address);
+    lps22->begin();
+    lps22->Enable();
+    for (int i = 0; i < 10; i++) {
+        float temperature;
+        float pressure;
+        uint8_t oversampling = 1;
+        int16_t ret;
+        ret = Dps3xxPressureSensor.measureTempOnce(temperature, oversampling);
+        ret = Dps3xxPressureSensor.measurePressureOnce(pressure, oversampling);
+        log_w("DPS368  %f  hPa", pressure/100.0);
+        delay(100);
+    }
+}
+
 void i2c_init(TwoWire &wire) {
 
     bmp581_init(wire, BMP5XX_ALTERNATIVE_ADDRESS);
     lps22_init(wire, LPS22DF_I2C_ADD_H);
+    dps368_init(wire, 0x77);
 
 }
 
