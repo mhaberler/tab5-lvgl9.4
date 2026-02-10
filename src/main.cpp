@@ -31,6 +31,12 @@ void setup() {
 
     delay(3000);
 
+    M5.Ex_I2C.begin();
+    scanI2C(&M5.Ex_I2C);
+    Wire.end();
+    Wire.begin(M5.Ex_I2C.getSDA(), M5.Ex_I2C.getSCL(), 100000);
+    i2c_init(Wire);
+
 #ifdef  HAS_DISPLAY
     M5.Display.setRotation(3);
     M5.Display.setBrightness(200);
@@ -50,11 +56,7 @@ void setup() {
     WiFi.STA.connect(WIFI_SSID, WIFI_PASS);
     bleScanner.begin(4096, 15000, 100, 99, 4096, 1, MALLOC_CAP_SPIRAM);
 
-    M5.Ex_I2C.begin();
-    scanI2C(&M5.Ex_I2C);
-    Wire.end();
-    Wire.begin(M5.Ex_I2C.getSDA(), M5.Ex_I2C.getSCL(), 400000);
-    i2c_init(Wire);
+
 }
 
 void loop() {

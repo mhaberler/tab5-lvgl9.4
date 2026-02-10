@@ -4,6 +4,7 @@
 #include "Adafruit_BMP5xx.h"
 #include <LPS22DFSensor.h>
 #include <Dps3xx.h>
+#include <Adafruit_INA228.h>
 
 Adafruit_BMP5xx bmp581; // Create BMP5xx object
 bmp5xx_powermode_t desiredMode = BMP5XX_POWERMODE_NORMAL;
@@ -14,6 +15,8 @@ Adafruit_Sensor *bmp_pressure = NULL;
 
 LPS22DFSensor *lps22;
 Dps3xx Dps3xxPressureSensor = Dps3xx();
+
+Adafruit_INA228 ina228 = Adafruit_INA228();
 
 
 void scanI2C(m5::I2C_Class* scanWire) {
@@ -87,11 +90,30 @@ void dps368_init(TwoWire& wire, uint8_t address ) {
     }
 }
 
-void i2c_init(TwoWire &wire) {
+bool ina228_init(TwoWire& wire, uint8_t address ) {
+    if (!ina228.begin(address, &wire)) {
+        log_e("INA228 not connected");
+        return false;
+    }
+    ina228.setShunt(0.02, 5.0);
+    ina228.setAveragingCount(INA228_COUNT_16);
+    ina228.setVoltageConversionTime(INA2XX_TIME_4120_us);
+    ina228.setCurrentConversionTime(INA2XX_TIME_4120_us);
 
+    for (int i = 0; i < 10; i++) {
+        float V = ina228.getBusVoltage_V();
+        float mA = ina228.getCurrent_mA();
+        log_w("INA228 %f V %f mA", V, mA);
+        delay(100);
+    }
+    return true;
+}
+
+
+void i2c_init(TwoWire &wire) {
     bmp581_init(wire, BMP5XX_ALTERNATIVE_ADDRESS);
     lps22_init(wire, LPS22DF_I2C_ADD_H);
     dps368_init(wire, 0x77);
-
+    ina228_init(wire, 0x40);
 }
 
