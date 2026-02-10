@@ -25,13 +25,17 @@ bool bmp581_init(TwoWire& wire, uint8_t address ) {
         log_e("BMP581 not connected");
         return false;
     }
-
-
-    bmp581.setTemperatureOversampling(BMP5XX_OVERSAMPLING_2X);
-    bmp581.setPressureOversampling(BMP5XX_OVERSAMPLING_16X);
-    bmp581.setIIRFilterCoeff(BMP5XX_IIR_FILTER_COEFF_3);
+   bmp581.setTemperatureOversampling(BMP5XX_OVERSAMPLING_1X);
+    bmp581.setPressureOversampling(BMP5XX_OVERSAMPLING_1X);
+    bmp581.setIIRFilterCoeff(BMP5XX_IIR_FILTER_BYPASS);
     bmp581.setOutputDataRate(BMP5XX_ODR_50_HZ);
     bmp581.setPowerMode(BMP5XX_POWERMODE_NORMAL);
+
+    // bmp581.setTemperatureOversampling(BMP5XX_OVERSAMPLING_2X);
+    // bmp581.setPressureOversampling(BMP5XX_OVERSAMPLING_16X);
+    // bmp581.setIIRFilterCoeff(BMP5XX_IIR_FILTER_COEFF_3);
+    // bmp581.setOutputDataRate(BMP5XX_ODR_50_HZ);
+    // bmp581.setPowerMode(BMP5XX_POWERMODE_NORMAL);
 
     bmp_temp = bmp581.getTemperatureSensor();
     bmp_pressure = bmp581.getPressureSensor();
