@@ -2,6 +2,7 @@
 #include <M5Unified.h>
 #include <Adafruit_Sensor.h>
 #include "Adafruit_BMP5xx.h"
+#include <LPS22DFSensor.h>
 
 Adafruit_BMP5xx bmp581; // Create BMP5xx object
 bmp5xx_powermode_t desiredMode = BMP5XX_POWERMODE_NORMAL;
@@ -9,6 +10,8 @@ bmp5xx_powermode_t desiredMode = BMP5XX_POWERMODE_NORMAL;
 // Get separate sensor objects for temperature and pressure
 Adafruit_Sensor *bmp_temp = NULL;
 Adafruit_Sensor *bmp_pressure = NULL;
+
+LPS22DFSensor *lps22;
 
 
 void scanI2C(m5::I2C_Class* scanWire) {
@@ -25,7 +28,7 @@ bool bmp581_init(TwoWire& wire, uint8_t address ) {
         log_e("BMP581 not connected");
         return false;
     }
-   bmp581.setTemperatureOversampling(BMP5XX_OVERSAMPLING_1X);
+    bmp581.setTemperatureOversampling(BMP5XX_OVERSAMPLING_1X);
     bmp581.setPressureOversampling(BMP5XX_OVERSAMPLING_1X);
     bmp581.setIIRFilterCoeff(BMP5XX_IIR_FILTER_BYPASS);
     bmp581.setOutputDataRate(BMP5XX_ODR_50_HZ);
@@ -53,8 +56,23 @@ bool bmp581_init(TwoWire& wire, uint8_t address ) {
     return true;
 }
 
-void i2c_init(TwoWire &scanWire) {
 
-    bmp581_init(scanWire, BMP5XX_ALTERNATIVE_ADDRESS);
+void lps22_init(TwoWire& wire, uint8_t address ) {
+    lps22 = new LPS22DFSensor(&wire, address);
+    lps22->begin();
+    lps22->Enable();
+    for (int i = 0; i < 10; i++) {
+        float pressure;
+        lps22->GetPressure(&pressure);
+        log_w("LPS22DF  %f  hPa", pressure);
+        delay(100);
+    }
+}
+
+void i2c_init(TwoWire &wire) {
+
+    bmp581_init(wire, BMP5XX_ALTERNATIVE_ADDRESS);
+    lps22_init(wire, LPS22DF_I2C_ADD_H);
+
 }
 
