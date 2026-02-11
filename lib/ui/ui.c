@@ -1,3 +1,5 @@
+#ifdef LVGL_UI
+
 #include <Arduino.h>
 #include <lvgl.h>
 
@@ -47,3 +49,4 @@ void ui_init(void)
     lv_obj_set_style_text_font(brightness_label, &lv_font_montserrat_24, 0);
     lv_obj_align(brightness_label, LV_ALIGN_CENTER, 0, 80);
 }
+#endif

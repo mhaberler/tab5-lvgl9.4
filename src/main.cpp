@@ -1,4 +1,3 @@
-#include <lvgl.h>
 #include <M5Unified.h>
 #include <ESPmDNS.h>
 #include <PicoMQTT.h>
@@ -9,27 +8,26 @@
 #include "BLEScanner.h"
 
 #ifdef LVGL_UI
+    #include <lvgl.h>
     #include "display_driver.h"
     #include "ui.h"
 #endif
 
-static const char *hostname = HOSTNAME;
-static wl_status_t wifi_status = WL_STOPPED;
-
 extern PicoMQTT::Server mqtt;
-
 static auto &bleScanner = BLEScanner::instance();
+
 void i2c_init(TwoWire &scanWire);
 void scanI2C(m5::I2C_Class* scanWire);
+void cfg_setup();
+void cfg_loop();
+
 
 void setup() {
     Serial.begin(115200);
+    delay(3000);
     auto cfg = M5.config();
     cfg.output_power = true;
     M5.begin(cfg);
-
-
-    delay(3000);
 
     M5.Ex_I2C.begin();
     scanI2C(&M5.Ex_I2C);
@@ -46,56 +44,15 @@ void setup() {
     ui_init();
 #endif
 #endif
-#ifdef BOARD_HAS_SDIO_ESP_HOSTED
-    WiFi.setPins(BOARD_SDIO_ESP_HOSTED_CLK, BOARD_SDIO_ESP_HOSTED_CMD, BOARD_SDIO_ESP_HOSTED_D0,
-                 BOARD_SDIO_ESP_HOSTED_D1, BOARD_SDIO_ESP_HOSTED_D2, BOARD_SDIO_ESP_HOSTED_D3,
-                 BOARD_SDIO_ESP_HOSTED_RESET);
-#endif
-    WiFi.STA.begin();
-    log_w("connecting to SSID %s", WIFI_SSID);
-    WiFi.STA.connect(WIFI_SSID, WIFI_PASS);
-    bleScanner.begin(4096, 15000, 100, 99, 4096, 1, MALLOC_CAP_SPIRAM);
-
-
+    cfg_setup();
+    mqtt.begin();
+    bleScanner.begin(4096, 15000, 100, 99, 4096, 1, RBMEM);
 }
 
 void loop() {
+    cfg_loop();
     M5.update();
-    wl_status_t ws = WiFi.STA.status();
-    if (ws ^ wifi_status) {
-        wifi_status = ws; // track changes
-        switch (ws) {
-            case WL_CONNECTED:
-                log_w("WiFi: Connected, IP: %s", WiFi.STA.localIP().toString().c_str());
 
-                if (updateEspHostedSlave()) {
-                    // Restart the host ESP32 after successful update
-                    // This is currently required to properly activate the new firmware
-                    // on the ESP-Hosted co-processor
-                    ESP.restart();
-                }
-                if (MDNS.begin(hostname)) {
-                    MDNS.addService("mqtt", "tcp", MQTT_PORT);
-                    MDNS.addService("mqtt-ws", "tcp", MQTTWS_PORT);
-                    MDNS.addServiceTxt("mqtt-ws", "tcp", "path", "/mqtt");
-                    mdns_service_instance_name_set("_mqtt", "_tcp", "PicoMQTT TCP broker");
-                    mdns_service_instance_name_set("_mqtt-ws", "_tcp",
-                                                   "PicoMQTT Websockets broker");
-                }
-                mqtt.begin();
-                break;
-            case WL_NO_SSID_AVAIL:
-                log_w("WiFi: SSID %s not found", WIFI_SSID);
-                break;
-            case WL_DISCONNECTED:
-                log_w("WiFi: disconnected");
-                break;
-            default:
-                log_w("WiFi status: %d", ws);
-                break;
-        }
-        delay(300);
-    }
 #ifdef LVGL_UI
     display_update();
 #endif
