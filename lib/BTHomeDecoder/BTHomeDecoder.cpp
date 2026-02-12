@@ -267,6 +267,7 @@ int BTHomeDecoder::getObjectDataLength(uint8_t objID) {
         case 0x58:
         case 0x5E:
         case 0x5F:
+        case 0x2D:
             return 2;
         case 0x04:
         case 0x05: // illuminance (3 bytes)
@@ -445,6 +446,8 @@ String BTHomeDecoder::getObjectUnit(uint8_t objID) {
             return "m/s²";
         case 0x52: // gyroscope
             return "°/s";
+        case 0x2D:
+            return "open";
         default:
             return "";
     }
@@ -476,6 +479,8 @@ String BTHomeDecoder::getObjectName(uint8_t objID) {
             return "VOC";
         case 0x14:
             return "moisture";
+        case 0x2D:
+            return "window";
         case 0x2E:
             return "humidity";
         case 0x2F:
