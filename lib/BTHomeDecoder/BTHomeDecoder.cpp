@@ -252,6 +252,7 @@ int BTHomeDecoder::getObjectDataLength(uint8_t objID) {
         case 0x13:
         case 0x14:
         case 0x3C:
+        case 0x3F:
         case 0x40:
         case 0x41:
         case 0x43:
@@ -263,11 +264,8 @@ int BTHomeDecoder::getObjectDataLength(uint8_t objID) {
         case 0x51:
         case 0x52:
         case 0x56:
-        case 0x57:
-        case 0x58:
         case 0x5E:
         case 0x5F:
-        case 0x2D:
             return 2;
         case 0x04:
         case 0x05: // illuminance (3 bytes)
@@ -277,9 +275,40 @@ int BTHomeDecoder::getObjectDataLength(uint8_t objID) {
         case 0x49:
         case 0x4B:
             return 3;
+        // Binary sensors (all uint8, 1 byte)
+        case 0x0F: // generic boolean
+        case 0x10: // power (binary)
+        case 0x11: // opening
+        case 0x15: // battery (binary)
+        case 0x16: // battery charging
+        case 0x17: // carbon monoxide
+        case 0x18: // cold
+        case 0x19: // connectivity
+        case 0x1A: // door
+        case 0x1B: // garage door
+        case 0x1C: // gas (binary)
+        case 0x1D: // heat
+        case 0x1E: // light
+        case 0x1F: // lock
+        case 0x20: // moisture (binary)
+        case 0x21: // motion
+        case 0x22: // moving
+        case 0x23: // occupancy
+        case 0x24: // plug
+        case 0x25: // presence
+        case 0x26: // problem
+        case 0x27: // running
+        case 0x28: // safety
+        case 0x29: // smoke
+        case 0x2A: // sound
+        case 0x2B: // tamper
+        case 0x2C: // vibration
+        case 0x2D: // window
         case 0x2E: // humidity (1 byte)
         case 0x2F: // soil moisture (1 byte)
         case 0x3A: // button
+        case 0x57: // temperature (sint8)
+        case 0x58: // temperature (sint8, factor 0.35)
             return 1;
         case 0x3E:
         case 0x4C:
@@ -337,7 +366,7 @@ float BTHomeDecoder::getObjectFactor(uint8_t objID) {
         case 0x2F:
             // Soil moisture is 1 byte, 0..100 => factor = 1 => raw 47 => 47%
             return 1.0f;
-        case 0x3F:
+        case 0x3F: // rotation
         case 0x5F: // precipitation
             return 0.1f;
         case 0x45:
@@ -375,6 +404,12 @@ bool BTHomeDecoder::getObjectSignedNess(uint8_t objID) {
         case 0x08: // dewpoint
         case 0x3F: // rotation
         case 0x45: // temperature
+        case 0x57: // temperature (sint8)
+        case 0x58: // temperature (sint8, factor 0.35)
+        case 0x5A: // count (sint16)
+        case 0x5B: // count (sint32)
+        case 0x5C: // power (sint32)
+        case 0x5D: // current (sint16)
         case 0x62: // speed (signed)
         case 0x63: // acceleration (signed)
             return true;
@@ -479,6 +514,61 @@ String BTHomeDecoder::getObjectName(uint8_t objID) {
             return "VOC";
         case 0x14:
             return "moisture";
+        // Binary sensors
+        case 0x0F:
+            return "generic_boolean";
+        case 0x10:
+            return "power_binary";
+        case 0x11:
+            return "opening";
+        case 0x15:
+            return "battery_low";
+        case 0x16:
+            return "battery_charging";
+        case 0x17:
+            return "carbon_monoxide";
+        case 0x18:
+            return "cold";
+        case 0x19:
+            return "connectivity";
+        case 0x1A:
+            return "door";
+        case 0x1B:
+            return "garage_door";
+        case 0x1C:
+            return "gas_detected";
+        case 0x1D:
+            return "heat";
+        case 0x1E:
+            return "light";
+        case 0x1F:
+            return "lock";
+        case 0x20:
+            return "moisture_binary";
+        case 0x21:
+            return "motion";
+        case 0x22:
+            return "moving";
+        case 0x23:
+            return "occupancy";
+        case 0x24:
+            return "plug";
+        case 0x25:
+            return "presence";
+        case 0x26:
+            return "problem";
+        case 0x27:
+            return "running";
+        case 0x28:
+            return "safety";
+        case 0x29:
+            return "smoke";
+        case 0x2A:
+            return "sound";
+        case 0x2B:
+            return "tamper";
+        case 0x2C:
+            return "vibration";
         case 0x2D:
             return "window";
         case 0x2E:
@@ -489,6 +579,8 @@ String BTHomeDecoder::getObjectName(uint8_t objID) {
             return "button";
         case 0x3C:
             return "dimmer";
+        case 0x3F:
+            return "rotation";
         case 0x40:
             return "distance_mm";
         case 0x41:
