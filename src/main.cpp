@@ -22,15 +22,30 @@ static auto &bleScanner = BLEScanner::instance();
 void i2c_init(TwoWire &scanWire);
 void scanI2C(m5::I2C_Class* scanWire);
 
+void wifi_scan();
+
+
 void setup() {
     Serial.begin(115200);
+
+    delay(3000);
+
+
     auto cfg = M5.config();
     cfg.output_power = true;
     M5.begin(cfg);
 
 
-    delay(3000);
+#ifdef BOARD_HAS_SDIO_ESP_HOSTED
+    WiFi.setPins(BOARD_SDIO_ESP_HOSTED_CLK, BOARD_SDIO_ESP_HOSTED_CMD, BOARD_SDIO_ESP_HOSTED_D0,
+                 BOARD_SDIO_ESP_HOSTED_D1, BOARD_SDIO_ESP_HOSTED_D2, BOARD_SDIO_ESP_HOSTED_D3,
+                 BOARD_SDIO_ESP_HOSTED_RESET);
+#endif
+    WiFi.STA.begin();
+    WiFi.mode(WIFI_STA);
+    WiFi.disconnect(false, true, 1000); // needed for scanNetworks to work
 
+    wifi_scan();
     M5.Ex_I2C.begin();
     scanI2C(&M5.Ex_I2C);
     Wire.end();
@@ -46,17 +61,10 @@ void setup() {
     ui_init();
 #endif
 #endif
-#ifdef BOARD_HAS_SDIO_ESP_HOSTED
-    WiFi.setPins(BOARD_SDIO_ESP_HOSTED_CLK, BOARD_SDIO_ESP_HOSTED_CMD, BOARD_SDIO_ESP_HOSTED_D0,
-                 BOARD_SDIO_ESP_HOSTED_D1, BOARD_SDIO_ESP_HOSTED_D2, BOARD_SDIO_ESP_HOSTED_D3,
-                 BOARD_SDIO_ESP_HOSTED_RESET);
-#endif
-    WiFi.STA.begin();
+
     log_w("connecting to SSID %s", WIFI_SSID);
     WiFi.STA.connect(WIFI_SSID, WIFI_PASS);
     bleScanner.begin(4096, 15000, 100, 99, 4096, 1, MALLOC_CAP_SPIRAM);
-
-
 }
 
 void loop() {
