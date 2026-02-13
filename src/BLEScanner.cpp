@@ -567,11 +567,11 @@ bool BLEScanner::deliver(JsonDocument &rawDoc, JsonDocument &outDoc) {
     bool decoded = false;
     std::vector<uint8_t> mfd;
 
-    if (rawDoc.containsKey("svduuid") &&
+    if (rawDoc["svduuid"].is<const char*>() &&
             String(rawDoc["svduuid"]).indexOf("fcd2") != -1) {
         decoded = decodeBTHome(rawDoc.as<JsonObject>(), outDoc,
                                _impl->bthDecoder, _impl->bthKey);
-    } else if (rawDoc.containsKey("mfd")) {
+    } else if (rawDoc["mfd"].is<const char*>()) {
         if (hexStringToVector(rawDoc["mfd"], mfd) && mfd.size() >= 2) {
             uint16_t mfid = mfd[1] << 8 | mfd[0];
             switch (mfid) {
@@ -631,9 +631,9 @@ bool BLEScanner::process(JsonDocument &doc, char *mac, size_t macLen) {
         outDoc["mac"]  = rawDoc["mac"];
         outDoc["time"] = rawDoc["time"];
         outDoc["rssi"] = rawDoc["rssi"];
-        if (rawDoc.containsKey("name"))
+        if (rawDoc["name"].is<const char*>())
             outDoc["name"] = rawDoc["name"];
-        if (rawDoc.containsKey("txpwr"))
+        if (rawDoc["txpwr"].is<JsonVariant>())
             outDoc["txpwr"] = rawDoc["txpwr"];
     }
 
