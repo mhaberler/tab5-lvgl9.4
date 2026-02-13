@@ -13,6 +13,12 @@
     #include "ui.h"
 #endif
 
+#ifdef BOARD_HAS_PSRAM
+    #define RBMEM MALLOC_CAP_SPIRAM
+#else
+    #define RBMEM MALLOC_CAP_DEFAULT
+#endif
+
 static const char *hostname = HOSTNAME;
 static wl_status_t wifi_status = WL_STOPPED;
 
@@ -27,15 +33,10 @@ void wifi_scan();
 
 void setup() {
     Serial.begin(115200);
-
     delay(3000);
-
-
     auto cfg = M5.config();
     cfg.output_power = true;
     M5.begin(cfg);
-
-
 #ifdef BOARD_HAS_SDIO_ESP_HOSTED
     WiFi.setPins(BOARD_SDIO_ESP_HOSTED_CLK, BOARD_SDIO_ESP_HOSTED_CMD, BOARD_SDIO_ESP_HOSTED_D0,
                  BOARD_SDIO_ESP_HOSTED_D1, BOARD_SDIO_ESP_HOSTED_D2, BOARD_SDIO_ESP_HOSTED_D3,
@@ -61,10 +62,9 @@ void setup() {
     ui_init();
 #endif
 #endif
-
     log_w("connecting to SSID %s", WIFI_SSID);
     WiFi.STA.connect(WIFI_SSID, WIFI_PASS);
-    bleScanner.begin(4096, 15000, 100, 99, 4096, 1, MALLOC_CAP_SPIRAM);
+    bleScanner.begin(4096, 15000, 100, 99, 4096, 1, RBMEM);
 }
 
 void loop() {
