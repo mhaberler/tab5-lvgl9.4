@@ -1,5 +1,8 @@
-#include <M5Unified.h>
+#if defined(M5UNIFIED)
+    #include <M5Unified.h>
+#endif
 #include <ESPmDNS.h>
+#include <Wire.h>
 #include <PicoMQTT.h>
 #include <PicoWebsocket.h>
 #include <WiFi.h>
@@ -20,13 +23,10 @@
 #endif
 
 static const char *hostname = HOSTNAME;
-static wl_status_t wifi_status = WL_STOPPED;
-
 extern PicoMQTT::Server mqtt;
 static auto &bleScanner = BLEScanner::instance();
 
-void i2c_init(TwoWire &scanWire);
-void scanI2C(m5::I2C_Class* scanWire);
+void i2c_init(TwoWire &wire);
 void cfg_setup();
 void cfg_loop();
 
@@ -34,17 +34,18 @@ void cfg_loop();
 void setup() {
     Serial.begin(115200);
     delay(3000);
+#if defined(M5UNIFIED)
     auto cfg = M5.config();
     cfg.output_power = true;
     M5.begin(cfg);
-
     M5.Ex_I2C.begin();
-    scanI2C(&M5.Ex_I2C);
     Wire.end();
     Wire.begin(M5.Ex_I2C.getSDA(), M5.Ex_I2C.getSCL(), 100000);
+#else
+    Wire.begin();
+#endif
     i2c_init(Wire);
-
-#ifdef  HAS_DISPLAY
+#if defined(HAS_DISPLAY) && defined(M5UNIFIED)
     M5.Display.setRotation(3);
     M5.Display.setBrightness(200);
 #ifdef LVGL_UI
@@ -59,9 +60,9 @@ void setup() {
 }
 
 void loop() {
-    cfg_loop();
+#if defined(M5UNIFIED)
     M5.update();
-
+#endif
 #ifdef LVGL_UI
     display_update();
 #endif
@@ -96,5 +97,6 @@ void loop() {
         }
     }
     mqtt.loop();
+    cfg_loop();
     yield();
 }

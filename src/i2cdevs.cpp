@@ -1,10 +1,10 @@
 #include "Wire.h"
-#include <M5Unified.h>
 #include <Adafruit_Sensor.h>
 #include "Adafruit_BMP5xx.h"
 #include <LPS22DFSensor.h>
 #include <Dps3xx.h>
 #include <Adafruit_INA228.h>
+#include "i2cio.hpp"
 
 Adafruit_BMP5xx bmp581; // Create BMP5xx object
 bmp5xx_powermode_t desiredMode = BMP5XX_POWERMODE_NORMAL;
@@ -17,16 +17,6 @@ LPS22DFSensor *lps22;
 Dps3xx Dps3xxPressureSensor = Dps3xx();
 
 Adafruit_INA228 ina228 = Adafruit_INA228();
-
-
-void scanI2C(m5::I2C_Class* scanWire) {
-    bool result[0x80];
-    scanWire->scanID(result);
-    for(int i = 0x08; i < 0x78; ++i) {
-        if (result[i])
-            log_w("%02x", i);
-    }
-}
 
 bool bmp581_init(TwoWire& wire, uint8_t address ) {
     if (!bmp581.begin(address, &wire)) {
@@ -111,6 +101,7 @@ bool ina228_init(TwoWire& wire, uint8_t address ) {
 
 
 void i2c_init(TwoWire &wire) {
+    i2c_scan(wire);
     bmp581_init(wire, BMP5XX_ALTERNATIVE_ADDRESS);
     lps22_init(wire, LPS22DF_I2C_ADD_H);
     dps368_init(wire, 0x77);

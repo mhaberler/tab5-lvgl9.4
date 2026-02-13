@@ -1,7 +1,10 @@
+#if defined(M5UNIFIED)
+
 #include <M5Unified.h>
 
 #ifdef LVGL_UI
 #include "display_driver.h"
+#include "lvgl.h"
 
 M5GFX display;
 
@@ -99,4 +102,5 @@ void display_update()
   lv_timer_handler();
 }
 
+#endif
 #endif

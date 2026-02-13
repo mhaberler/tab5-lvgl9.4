@@ -1,7 +1,6 @@
 #pragma once
 
 #include <M5GFX.h>
-#include "lvgl.h"
 
 extern M5GFX display;
 
