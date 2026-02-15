@@ -2,6 +2,7 @@
 #include <LittleFS.h>
 #include "FSWebServer.h"
 #include <ESPmDNS.h>
+#include <WiFi.h>
 
 #include "index_htm.h"
 
@@ -135,11 +136,17 @@ void cfg_setup() {
   MDNS.addService("mqtt", "tcp", MQTT_PORT);
   MDNS.addService("mqtt-ws", "tcp", MQTTWS_PORT);
   MDNS.addServiceTxt("mqtt-ws", "tcp", "path", "/mqtt");
-  mdns_service_instance_name_set("_mqtt", "_tcp", "PicoMQTT TCP broker");
-  mdns_service_instance_name_set("_mqtt-ws", "_tcp",
-                                  "PicoMQTT Websockets broker");
 
-  Serial.print(F("ESP Web Server started on IP Address: "));
+  // Get MAC address
+  uint8_t mac[6];
+  WiFi.macAddress(mac);
+  String macStr = String(mac[0], HEX) + String(mac[1], HEX) + String(mac[2], HEX) + String(mac[3], HEX) + String(mac[4], HEX) + String(mac[5], HEX);
+  macStr.toUpperCase();
+
+  mdns_service_instance_name_set("_mqtt", "_tcp", ("PicoMQTT TCP broker (" + macStr + ")").c_str());
+  mdns_service_instance_name_set("_mqtt-ws", "_tcp",
+                                  ("PicoMQTT Websockets broker (" + macStr + ")").c_str());
+Serial.print(F("ESP Web Server started on IP Address: "));
   Serial.println(server.getServerIP());
   Serial.println(F(
     "Open /setup page to configure optional parameters.\n"
