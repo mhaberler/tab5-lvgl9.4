@@ -51,8 +51,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
 }
 
 // Test "config" values
-String optionString = "Test option String";
-uint32_t optionULong = 1234567890;
+bool decodedOnly = "Report decoded ads only";
 
 // Timezone definition to get properly time from NTP server
 #define MYTZ "CET-1CEST,M3.5.0,M10.5.0/3"
@@ -88,8 +87,7 @@ bool startFilesystem() {
 ////////////////////  Load and save application configuration from filesystem  ////////////////////
 bool loadApplicationConfig() {
   if (FILESYSTEM.exists(server.getConfiFileName())) {
-    server.getOptionValue("Option 1", optionString);
-    server.getOptionValue("Option 2", optionULong);
+    server.getOptionValue("Report decoded ads only", decodedOnly);
     server.closeSetupConfiguration();  // Close configuration to free resources
     return true;
   }
@@ -104,8 +102,7 @@ void cfg_setup() {
     // Load configuration (if not present, default will be created when webserver will start)
     if (loadApplicationConfig()) {
       Serial.println(F("\nApplication option loaded"));
-      Serial.printf("  Option 1: %s\n", optionString.c_str());
-      Serial.printf("  Option 2: %u\nn", optionULong);
+      Serial.printf("Report decoded ads only: %d\n",decodedOnly);
     }
     else
       Serial.println(F("Application options NOT loaded!"));
@@ -118,9 +115,8 @@ void cfg_setup() {
   }
 
   // Configure /setup page
-  server.addOptionBox("My Options");
-  server.addOption("Option 1", optionString.c_str());
-  server.addOption("Option 2", optionULong);
+  server.addOptionBox("Options");
+  server.addOption("Report decoded ads only", decodedOnly);
 
   // Add custom page handlers
   server.on("/", HTTP_GET, [](){

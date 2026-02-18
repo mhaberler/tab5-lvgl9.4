@@ -25,6 +25,7 @@
 static const char *hostname = HOSTNAME;
 extern PicoMQTT::Server mqtt;
 static auto &bleScanner = BLEScanner::instance();
+extern bool decodedOnly;
 
 void i2c_init(TwoWire &wire);
 void cfg_setup();
@@ -70,10 +71,17 @@ void loop() {
         JsonDocument doc;
         char mac[16];
         if (bleScanner.process(doc, mac, sizeof(mac))) {
-            String topic = String("ble/") + mac;
-            auto publish = mqtt.begin_publish(topic.c_str(), measureJson(doc));
-            serializeJson(doc, publish);
-            publish.send();
+            // Only publish if not decodedOnly mode, or if decoded property is true
+            if (!decodedOnly || doc["decoded"].as<bool>()) {
+                // Remove decoded attribute in decodedOnly mode before publishing
+                if (decodedOnly) {
+                    doc.remove("decoded");
+                }
+                String topic = String("ble/") + mac;
+                auto publish = mqtt.begin_publish(topic.c_str(), measureJson(doc));
+                serializeJson(doc, publish);
+                publish.send();
+            }
         }
     }
     {

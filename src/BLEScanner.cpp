@@ -636,6 +636,7 @@ bool BLEScanner::process(JsonDocument &doc, char *mac, size_t macLen) {
         if (rawDoc["txpwr"].is<JsonVariant>())
             outDoc["txpwr"] = rawDoc["txpwr"];
     }
+    outDoc["decoded"]  = decoded;
 
     // Extract MAC (strip colons)
     String macStr = rawDoc["mac"].as<String>();
