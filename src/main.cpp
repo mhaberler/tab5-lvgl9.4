@@ -22,14 +22,13 @@
     #define RBMEM MALLOC_CAP_DEFAULT
 #endif
 
-static const char *hostname = HOSTNAME;
 extern PicoMQTT::Server mqtt;
 static auto &bleScanner = BLEScanner::instance();
 extern bool decodedOnly;
 
 void i2c_init(TwoWire &wire);
-void cfg_setup();
-void cfg_loop();
+void wifi_setup();
+void wifi_loop();
 
 
 void setup() {
@@ -45,7 +44,9 @@ void setup() {
 #else
     Wire.begin();
 #endif
+#ifdef USE_I2C_SENSORS
     i2c_init(Wire);
+#endif
 #if defined(HAS_DISPLAY) && defined(M5UNIFIED)
     M5.Display.setRotation(3);
     M5.Display.setBrightness(200);
@@ -55,7 +56,7 @@ void setup() {
     ui_init();
 #endif
 #endif
-    cfg_setup();
+    wifi_setup();
     mqtt.begin();
     bleScanner.begin(4096, 15000, 100, 99, 4096, 1, RBMEM);
 }
@@ -111,6 +112,6 @@ void loop() {
         }
     }
     mqtt.loop();
-    cfg_loop();
+    wifi_loop();
     yield();
 }
