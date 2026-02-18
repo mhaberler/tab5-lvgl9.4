@@ -186,22 +186,32 @@ void wifi_loop() {
     if (ws ^ wifi_status) {
         wifi_status = ws; // track changes
         switch (ws) {
-            case WL_CONNECTED:
-                log_w("WiFi: Connected, IP: %s", WiFi.STA.localIP().toString().c_str());
+            case WL_CONNECTED: {
 
-                if (updateEspHostedSlave()) {
-                    // Restart the host ESP32 after successful update
-                    // This is currently required to properly activate the new firmware
-                    // on the ESP-Hosted co-processor
-                    ESP.restart();
-                }
-                if (MDNS.begin(hostname)) {
-                    MDNS.addService("mqtt", "tcp", MQTT_PORT);
-                    MDNS.addService("mqtt-ws", "tcp", MQTTWS_PORT);
-                    MDNS.addServiceTxt("mqtt-ws", "tcp", "path", "/mqtt");
-                    mdns_service_instance_name_set("_mqtt", "_tcp", "PicoMQTT TCP broker");
-                    mdns_service_instance_name_set("_mqtt-ws", "_tcp",
-                                                   "PicoMQTT Websockets broker");
+
+                    log_w("WiFi: Connected, IP: %s", WiFi.STA.localIP().toString().c_str());
+
+                    if (updateEspHostedSlave()) {
+                        // Restart the host ESP32 after successful update
+                        // This is currently required to properly activate the new firmware
+                        // on the ESP-Hosted co-processor
+                        ESP.restart();
+                    }
+                    // Get MAC address
+                    uint8_t mac[6];
+                    WiFi.macAddress(mac);
+                    String macStr = String(mac[0], HEX) + String(mac[1], HEX) + String(mac[2], HEX) + String(mac[3], HEX) + String(mac[4], HEX) + String(mac[5], HEX);
+                    macStr.toUpperCase();
+
+
+                    if (MDNS.begin(hostname)) {
+                        MDNS.addService("mqtt", "tcp", MQTT_PORT);
+                        MDNS.addService("mqtt-ws", "tcp", MQTTWS_PORT);
+                        MDNS.addServiceTxt("mqtt-ws", "tcp", "path", "/mqtt");
+                        mdns_service_instance_name_set("_mqtt", "_tcp", ("PicoMQTT-TCP-" + macStr).c_str());
+                        mdns_service_instance_name_set("_mqtt-ws", "_tcp",
+                                                       ("PicoMQTT-WS-" + macStr).c_str());
+                    }
                 }
                 break;
             case WL_NO_SSID_AVAIL:
