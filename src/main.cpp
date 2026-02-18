@@ -86,22 +86,28 @@ void loop() {
     }
     {
         static BLEScanner::Stats lastStats = {};
-        auto st = bleScanner.stats();
-        if (st.hwmBytes > lastStats.hwmBytes ||
-                st.queueFull > lastStats.queueFull ||
-                st.acquireFail > lastStats.acquireFail ||
-                st.received > lastStats.received ||
-                st.decoded > lastStats.decoded) {
-            lastStats = st;
-            JsonDocument sdoc;
-            sdoc["hwm"] = st.hwmPercent;
-            sdoc["qfull"] = st.queueFull;
-            sdoc["afail"] = st.acquireFail;
-            sdoc["rx"] = st.received;
-            sdoc["dec"] = st.decoded;
-            auto publish = mqtt.begin_publish("ble/$stats", measureJson(sdoc));
-            serializeJson(sdoc, publish);
-            publish.send();
+        static unsigned long lastPublishTime = 0;
+        unsigned long now = millis();
+
+        if (now - lastPublishTime >= 10000) {
+            auto st = bleScanner.stats();
+            if (st.hwmBytes > lastStats.hwmBytes ||
+                    st.queueFull > lastStats.queueFull ||
+                    st.acquireFail > lastStats.acquireFail ||
+                    st.received > lastStats.received ||
+                    st.decoded > lastStats.decoded) {
+                lastStats = st;
+                JsonDocument sdoc;
+                sdoc["hwm"] = st.hwmPercent;
+                sdoc["qfull"] = st.queueFull;
+                sdoc["afail"] = st.acquireFail;
+                sdoc["rx"] = st.received;
+                sdoc["dec"] = st.decoded;
+                auto publish = mqtt.begin_publish("ble/$stats", measureJson(sdoc));
+                serializeJson(sdoc, publish);
+                publish.send();
+            }
+            lastPublishTime = now;
         }
     }
     mqtt.loop();
