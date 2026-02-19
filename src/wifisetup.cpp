@@ -229,8 +229,9 @@ void wifi_loop() {
         wifi_status = ws; // track changes
         switch (ws) {
             case WL_CONNECTED: {
-                    log_w("WiFi: Connected to %s RSSI %d  IP: %s",
+                    log_w("WiFi: Connected to %s %s RSSI %d  IP: %s",
                           WiFi.STA.SSID().c_str(),
+                          WiFi.STA.BSSIDstr().c_str(),
                           WiFi.STA.RSSI(),
                           WiFi.STA.localIP().toString().c_str());
 
