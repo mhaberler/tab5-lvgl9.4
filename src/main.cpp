@@ -58,7 +58,6 @@ void setup() {
 #endif
 #endif
     wifi_setup();
-    // mqtt.begin();
     bleScanner.begin(4096, 15000, 100, 99, 4096, 1, RBMEM);
 }
 

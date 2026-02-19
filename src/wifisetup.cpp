@@ -194,7 +194,7 @@ void wifi_setup() {
                  BOARD_SDIO_ESP_HOSTED_RESET);
 #endif
     WiFi.STA.begin();
-    WiFi.setBandMode(WIFI_BAND_MODE_AUTO); // default
+    // WiFi.setBandMode(WIFI_BAND_MODE_AUTO); // default
     // WiFi.setBandMode(WIFI_BAND_MODE_5G_ONLY);
     // WiFi.setBandMode(WIFI_BAND_MODE_2G_ONLY);
 
