@@ -270,6 +270,7 @@ void wifi_loop() {
                 break;
             case WL_DISCONNECTED:
                 log_w("WiFi: disconnected");
+                MDNS.end();
                 break;
             default:
                 log_w("WiFi status: %d", ws);
