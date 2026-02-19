@@ -256,6 +256,7 @@ void wifi_loop() {
                     String macStr = String(mac[0], HEX) + String(mac[1], HEX) + String(mac[2], HEX) + String(mac[3], HEX) + String(mac[4], HEX) + String(mac[5], HEX);
                     macStr.toUpperCase();
                     if (MDNS.begin(hostname)) {
+                        MDNS.enableWorkstation();
                         MDNS.addService("mqtt", "tcp", MQTT_PORT);
                         MDNS.addService("mqtt-ws", "tcp", MQTTWS_PORT);
                         MDNS.addServiceTxt("mqtt-ws", "tcp", "path", "/mqtt");
