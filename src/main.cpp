@@ -25,6 +25,7 @@
 extern PicoMQTT::Server mqtt;
 static auto &bleScanner = BLEScanner::instance();
 extern bool decodedOnly;
+extern uint8_t wifi_status;
 
 void i2c_init(TwoWire &wire);
 void wifi_setup();
@@ -57,7 +58,7 @@ void setup() {
 #endif
 #endif
     wifi_setup();
-    mqtt.begin();
+    // mqtt.begin();
     bleScanner.begin(4096, 15000, 100, 99, 4096, 1, RBMEM);
 }
 
@@ -68,50 +69,53 @@ void loop() {
 #ifdef LVGL_UI
     display_update();
 #endif
-    {
-        JsonDocument doc;
-        char mac[16];
-        if (bleScanner.process(doc, mac, sizeof(mac))) {
-            // Only publish if not decodedOnly mode, or if decoded property is true
-            if (!decodedOnly || doc["decoded"].as<bool>()) {
-                // Remove decoded attribute in decodedOnly mode before publishing
-                if (decodedOnly) {
-                    doc.remove("decoded");
-                }
-                String topic = String("ble/") + mac;
-                auto publish = mqtt.begin_publish(topic.c_str(), measureJson(doc));
-                serializeJson(doc, publish);
-                publish.send();
-            }
-        }
-    }
-    {
-        static BLEScanner::Stats lastStats = {};
-        static unsigned long lastPublishTime = 0;
-        unsigned long now = millis();
 
-        if (now - lastPublishTime >= 10000) {
-            auto st = bleScanner.stats();
-            if (st.hwmBytes > lastStats.hwmBytes ||
-                    st.queueFull > lastStats.queueFull ||
-                    st.acquireFail > lastStats.acquireFail ||
-                    st.received > lastStats.received ||
-                    st.decoded > lastStats.decoded) {
-                lastStats = st;
-                JsonDocument sdoc;
-                sdoc["hwm"] = st.hwmPercent;
-                sdoc["qfull"] = st.queueFull;
-                sdoc["afail"] = st.acquireFail;
-                sdoc["rx"] = st.received;
-                sdoc["dec"] = st.decoded;
-                auto publish = mqtt.begin_publish("ble/$stats", measureJson(sdoc));
-                serializeJson(sdoc, publish);
-                publish.send();
+    if (wifi_status == WL_CONNECTED) {
+        {
+            JsonDocument doc;
+            char mac[16];
+            if (bleScanner.process(doc, mac, sizeof(mac))) {
+                // Only publish if not decodedOnly mode, or if decoded property is true
+                if (!decodedOnly || doc["decoded"].as<bool>()) {
+                    // Remove decoded attribute in decodedOnly mode before publishing
+                    if (decodedOnly) {
+                        doc.remove("decoded");
+                    }
+                    String topic = String("ble/") + mac;
+                    auto publish = mqtt.begin_publish(topic.c_str(), measureJson(doc));
+                    serializeJson(doc, publish);
+                    publish.send();
+                }
             }
-            lastPublishTime = now;
         }
+        {
+            static BLEScanner::Stats lastStats = {};
+            static unsigned long lastPublishTime = 0;
+            unsigned long now = millis();
+
+            if (now - lastPublishTime >= 10000) {
+                auto st = bleScanner.stats();
+                if (st.hwmBytes > lastStats.hwmBytes ||
+                        st.queueFull > lastStats.queueFull ||
+                        st.acquireFail > lastStats.acquireFail ||
+                        st.received > lastStats.received ||
+                        st.decoded > lastStats.decoded) {
+                    lastStats = st;
+                    JsonDocument sdoc;
+                    sdoc["hwm"] = st.hwmPercent;
+                    sdoc["qfull"] = st.queueFull;
+                    sdoc["afail"] = st.acquireFail;
+                    sdoc["rx"] = st.received;
+                    sdoc["dec"] = st.decoded;
+                    auto publish = mqtt.begin_publish("ble/$stats", measureJson(sdoc));
+                    serializeJson(sdoc, publish);
+                    publish.send();
+                }
+                lastPublishTime = now;
+            }
+        }
+        mqtt.loop();
     }
-    mqtt.loop();
     wifi_loop();
     yield();
 }

@@ -164,11 +164,28 @@ void wifi_loop() {
 #else
 
 #include <WiFi.h>
+#include <WiFiMulti.h>
 #include "ESP_HostedOTA.h"
 #include <ESPmDNS.h>
+#include <PicoMQTT.h>
+#include <HTTPClient.h>
 
+extern PicoMQTT::Server mqtt;
 bool decodedOnly = true;
-static wl_status_t wifi_status = WL_STOPPED;
+uint8_t wifi_status = WL_STOPPED;
+WiFiMulti wifiMulti;
+
+// callback used to check Internet connectivity
+// bool testConnection() {
+//     HTTPClient http;
+//     http.begin("http://www.espressif.com");
+//     int httpCode = http.GET();
+//     // we expect to get a 301 because it will ask to use HTTPS instead of HTTP
+//     if (httpCode == HTTP_CODE_MOVED_PERMANENTLY) {
+//         return true;
+//     }
+//     return false;
+// }
 
 void wifi_setup() {
 #ifdef BOARD_HAS_SDIO_ESP_HOSTED
@@ -177,33 +194,67 @@ void wifi_setup() {
                  BOARD_SDIO_ESP_HOSTED_RESET);
 #endif
     WiFi.STA.begin();
-    log_w("connecting to SSID %s", WIFI_SSID);
-    WiFi.STA.connect(WIFI_SSID, WIFI_PASS);
+    WiFi.setBandMode(WIFI_BAND_MODE_AUTO); // default
+    // WiFi.setBandMode(WIFI_BAND_MODE_5G_ONLY);
+    // WiFi.setBandMode(WIFI_BAND_MODE_2G_ONLY);
+
+#ifdef SSID1
+    wifiMulti.addAP(SSID1, PW1);
+#endif
+#ifdef SSID2
+    wifiMulti.addAP(SSID2, PW2);
+#endif
+#ifdef SSID3
+    wifiMulti.addAP(SSID3, PW3);
+#endif
+#ifdef SSID4
+    wifiMulti.addAP(SSID4, PW4);
+#endif
+#ifdef SSID5
+    wifiMulti.addAP(SSID5, PW5);
+#endif
+#ifdef SSID6
+    wifiMulti.addAP(SSID6, PW6);
+#endif
+    // These options can help when you need ANY kind of wifi connection to get a config file, report errors, etc.
+    wifiMulti.setStrictMode(false);  // Default is true.  Library will disconnect and forget currently connected AP if it's not in the AP list.
+    wifiMulti.setAllowOpenAP(true);  // Default is false.  True adds open APs to the AP list.
+    // wifiMulti.setConnectionTestCallbackFunc(testConnection);  // Attempts to connect to a remote webserver in case of captive portals.
+    log_w("connecting to WiFi");
 }
 
 void wifi_loop() {
-    wl_status_t ws = WiFi.STA.status();
+    uint8_t ws = wifiMulti.run();
     if (ws ^ wifi_status) {
         wifi_status = ws; // track changes
         switch (ws) {
             case WL_CONNECTED: {
+                    log_w("WiFi: Connected to %s RSSI %d  IP: %s",
+                          WiFi.STA.SSID().c_str(),
+                          WiFi.STA.RSSI(),
+                          WiFi.STA.localIP().toString().c_str());
 
-
-                    log_w("WiFi: Connected, IP: %s", WiFi.STA.localIP().toString().c_str());
-
+                    switch (WiFi.getBand()) {
+                        case WIFI_BAND_2G:
+                            log_w("Band is 2.4 GHz");
+                            break;
+                        case WIFI_BAND_5G:
+                            log_w("Band is 5 GHz");
+                            break;
+                    }
                     if (updateEspHostedSlave()) {
                         // Restart the host ESP32 after successful update
                         // This is currently required to properly activate the new firmware
                         // on the ESP-Hosted co-processor
                         ESP.restart();
                     }
+                    mqtt.begin();
+
                     // Get MAC address
                     uint8_t mac[6];
                     WiFi.macAddress(mac);
                     String macStr = String(mac[0], HEX) + String(mac[1], HEX) + String(mac[2], HEX) + String(mac[3], HEX) + String(mac[4], HEX) + String(mac[5], HEX);
                     macStr.toUpperCase();
-
-
                     if (MDNS.begin(hostname)) {
                         MDNS.addService("mqtt", "tcp", MQTT_PORT);
                         MDNS.addService("mqtt-ws", "tcp", MQTTWS_PORT);
@@ -215,7 +266,7 @@ void wifi_loop() {
                 }
                 break;
             case WL_NO_SSID_AVAIL:
-                log_w("WiFi: SSID %s not found", WIFI_SSID);
+                log_w("WiFi: WL_NO_SSID_AVAIL");
                 break;
             case WL_DISCONNECTED:
                 log_w("WiFi: disconnected");
@@ -226,5 +277,6 @@ void wifi_loop() {
         }
         delay(300);
     }
+
 }
 #endif
