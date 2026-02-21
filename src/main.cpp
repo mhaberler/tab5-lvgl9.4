@@ -32,7 +32,8 @@ extern uint8_t wifi_status;
 void i2c_init(TwoWire &wire);
 void wifi_setup();
 void wifi_loop();
-
+void http_setup(void);
+void http_loop(void);
 
 void setup() {
     Serial.begin(115200);
@@ -60,12 +61,14 @@ void setup() {
 #endif
 #endif
     wifi_setup();
+    http_setup();
 #ifdef USE_BLESCANNER
     bleScanner.begin(4096, 15000, 100, 99, 4096, 1, RBMEM);
 #endif
 }
 
 void loop() {
+    http_loop();
 #if defined(M5UNIFIED)
     M5.update();
 #endif

@@ -1,0 +1,51 @@
+{
+	"name": "example-svelte",
+	"version": "0.0.1",
+	"type": "module",
+	"main": "build/index.js",
+	"engines": {
+		"node": ">=18.0.0",
+		"npm": ">=10.0.0"
+	},
+	"scripts": {
+		"dev": "vite dev --host",
+		"build": "vite build && gzip -c ./dist/favicon.png > ./dist/favicon.png.gz && cp ./dist/gallery/esp32-2.jpg ./dist/gallery/esp32-2a.jpg",
+		"preview": "vite preview",
+		"test": "npm run test:integration && npm run test:unit",
+		"ts:check": "svelte-check --tsconfig ./tsconfig.json",
+		"format:check": "prettier --check .",
+		"format:fix": "prettier --write .",
+		"lint:check": "eslint .",
+		"lint:fix": "eslint --fix .",
+		"all": "npm run format:fix && npm run lint:fix && npm run ts:check && npm run build",
+		"npm:reinstall": "rm -rf ./node_modules && rm -f ./package-lock.json && npm i && npm i"
+	},
+	"devDependencies": {
+		"@sveltejs/vite-plugin-svelte": "^6.2.4",
+		"@tailwindcss/postcss": "^4.2.0",
+		"@tailwindcss/vite": "^4.2.0",
+		"@tsconfig/svelte": "^5.0.8",
+		"@typescript-eslint/eslint-plugin": "^8.56.0",
+		"@typescript-eslint/parser": "^8.56.0",
+		"autoprefixer": "^10.4.24",
+		"eslint": "^10.0.0",
+		"eslint-config-prettier": "^10.1.8",
+		"eslint-plugin-simple-import-sort": "^12.1.1",
+		"eslint-plugin-svelte": "^3.15.0",
+		"eslint-plugin-unicorn": "^63.0.0",
+		"flowbite-svelte": "^1.31.0",
+		"flowbite-svelte-icons": "^3.1.0",
+		"postcss": "^8.5.6",
+		"postcss-load-config": "^6.0.1",
+		"prettier": "^3.8.1",
+		"prettier-plugin-svelte": "^3.5.0",
+		"svelte": "^5.53.0",
+		"svelte-check": "^4.4.1",
+		"svelte-preprocess": "^6.0.3",
+		"svelteesp32": "github:mhaberler/svelteesp32#arduino-webserver",
+		"tailwindcss": "^4.2.0",
+		"tslib": "^2.8.1",
+		"typescript": "^5.9.3",
+		"vite": "^7.3.1"
+	}
+}
