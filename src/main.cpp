@@ -23,7 +23,9 @@
 #endif
 
 extern PicoMQTT::Server mqtt;
-static auto &bleScanner = BLEScanner::instance();
+#ifdef USE_BLESCANNER
+    static auto &bleScanner = BLEScanner::instance();
+#endif
 extern bool decodedOnly;
 extern uint8_t wifi_status;
 
@@ -58,7 +60,9 @@ void setup() {
 #endif
 #endif
     wifi_setup();
+#ifdef USE_BLESCANNER
     bleScanner.begin(4096, 15000, 100, 99, 4096, 1, RBMEM);
+#endif
 }
 
 void loop() {
@@ -68,8 +72,8 @@ void loop() {
 #ifdef LVGL_UI
     display_update();
 #endif
-
     if (wifi_status == WL_CONNECTED) {
+#ifdef USE_BLESCANNER
         {
             JsonDocument doc;
             char mac[16];
@@ -86,8 +90,7 @@ void loop() {
                     publish.send();
                 }
             }
-        }
-        {
+        } {
             static BLEScanner::Stats lastStats = {};
             static unsigned long lastPublishTime = 0;
             unsigned long now = millis();
@@ -113,6 +116,7 @@ void loop() {
                 lastPublishTime = now;
             }
         }
+#endif
         mqtt.loop();
     }
     wifi_loop();

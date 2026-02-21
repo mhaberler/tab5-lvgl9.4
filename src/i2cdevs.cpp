@@ -42,7 +42,7 @@ bool bmp581_init(TwoWire& wire, uint8_t address ) {
     for (int i = 0; i < 10; i++) {
         // Get pressure event using unified sensor API
         if (bmp_pressure->getEvent(&pressure_event)) {
-            log_w("BMP581  %f  hPa", pressure_event.pressure);
+            log_i("BMP581  %f  hPa", pressure_event.pressure);
         } else {
             log_e("Failed to get pressure event");
         }
@@ -59,7 +59,7 @@ void lps22_init(TwoWire& wire, uint8_t address ) {
     for (int i = 0; i < 10; i++) {
         float pressure;
         lps22->GetPressure(&pressure);
-        log_w("LPS22DF  %f  hPa", pressure);
+        log_i("LPS22DF  %f  hPa", pressure);
         delay(100);
     }
 }
@@ -75,7 +75,7 @@ void dps368_init(TwoWire& wire, uint8_t address ) {
         int16_t ret;
         ret = Dps3xxPressureSensor.measureTempOnce(temperature, oversampling);
         ret = Dps3xxPressureSensor.measurePressureOnce(pressure, oversampling);
-        log_w("DPS368  %f  hPa", pressure/100.0);
+        log_i("DPS368  %f  hPa", pressure/100.0);
         delay(100);
     }
 }
@@ -93,7 +93,7 @@ bool ina228_init(TwoWire& wire, uint8_t address ) {
     for (int i = 0; i < 10; i++) {
         float V = ina228.getBusVoltage_V();
         float mA = ina228.getCurrent_mA();
-        log_w("INA228 %f V %f mA", V, mA);
+        log_i("INA228 %f V %f mA", V, mA);
         delay(100);
     }
     return true;
