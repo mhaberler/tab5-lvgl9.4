@@ -10,15 +10,15 @@
 	"scripts": {
 		"dev": "vite dev --host",
 		"build": "vite build && gzip -c ./dist/favicon.png > ./dist/favicon.png.gz && cp ./dist/gallery/esp32-2.jpg ./dist/gallery/esp32-2a.jpg",
+		"generate": "npx tsx /Users/mah/Ballon/src/BalloonWare/networking/svelteesp32/src/index.ts -e webserver -s dist -o ../../include/svelteesp32webserver.h  --etag=true --gzip=true",
 		"preview": "vite preview",
-		"test": "npm run test:integration && npm run test:unit",
 		"ts:check": "svelte-check --tsconfig ./tsconfig.json",
 		"format:check": "prettier --check .",
 		"format:fix": "prettier --write .",
 		"lint:check": "eslint .",
 		"lint:fix": "eslint --fix .",
 		"all": "npm run format:fix && npm run lint:fix && npm run ts:check && npm run build",
-		"npm:reinstall": "rm -rf ./node_modules && rm -f ./package-lock.json && npm i && npm i"
+		"npm:reinstall": "rm -rf ./node_modules && rm -f ./package-lock.json && bun i && bun i"
 	},
 	"devDependencies": {
 		"@sveltejs/vite-plugin-svelte": "^6.2.4",
