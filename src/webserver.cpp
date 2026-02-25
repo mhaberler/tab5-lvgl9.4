@@ -3,68 +3,48 @@
 #include <WebServer.h>
 #include "svelteesp32webserver.h"
 
+
 #ifndef SVELTEESP32_FILE_INDEX_HTML
     #error Missing index file
+#endif
+
+#ifdef USE_ELEGANT_OTA
+    #include <ElegantOTA.h>
 #endif
 
 WebServer server(80);
 
 bool ledState = false;
 
+#ifdef USE_ELEGANT_OTA
+unsigned long ota_progress_millis = 0;
+void onOTAStart() {
+    // Log when OTA has started
+    log_w("OTA update started!");
+    // <Add your own code here>
+}
+
+void onOTAProgress(size_t current, size_t final) {
+    // Log every 1 second
+    if (millis() - ota_progress_millis > 1000) {
+        ota_progress_millis = millis();
+        log_w("OTA Progress Current: %u bytes, Final: %u bytes", current, final);
+    }
+}
+
+void onOTAEnd(bool success) {
+    // Log when OTA has finished
+    if (success) {
+        log_w("OTA update finished successfully!");
+    } else {
+        log_e("There was an error during OTA update!");
+    }
+    // <Add your own code here>
+}
+#endif
+
 String getStatusJson() {
     return "{\"uptime\":" + String(millis() / 1000) + ",\"led\":" + (ledState ? "true" : "false") + "}";
-}
-
-
-void handleRoot() {
-    //   digitalWrite(led, 1);
-    char temp[400];
-    int sec = millis() / 1000;
-    int hr = sec / 3600;
-    int min = (sec / 60) % 60;
-    sec = sec % 60;
-
-    snprintf(
-        temp, 400,
-
-        "<html>\
-  <head>\
-    <meta http-equiv='refresh' content='5'/>\
-    <title>ESP32 Demo</title>\
-    <style>\
-      body { background-color: #cccccc; font-family: Arial, Helvetica, Sans-Serif; Color: #000088; }\
-    </style>\
-  </head>\
-  <body>\
-    <h1>Hello from ESP32!</h1>\
-    <p>Uptime: %02d:%02d:%02d</p>\
-    <img src=\"/test.svg\" />\
-  </body>\
-</html>",
-
-        hr, min, sec
-    );
-    server.send(200, "text/html", temp);
-    //   digitalWrite(led, 0);
-}
-
-void handleNotFound() {
-    //   digitalWrite(led, 1);
-    String message = "File Not Found\n\n";
-    message += "URI: ";
-    message += server.uri();
-    message += "\nMethod: ";
-    message += (server.method() == HTTP_GET) ? "GET" : "POST";
-    message += "\nArguments: ";
-    message += server.args();
-    message += "\n";
-
-    for (uint8_t i = 0; i < server.args(); i++) {
-        message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
-    }
-
-    server.send(404, "text/plain", message);
-    //   digitalWrite(led, 0);
 }
 
 void http_setup(void) {
@@ -81,8 +61,18 @@ void http_setup(void) {
     });
 
     server.begin();
+#ifdef USE_ELEGANT_OTA
+    ElegantOTA.begin(&server);
+    // ElegantOTA callbacks
+    ElegantOTA.onStart(onOTAStart);
+    ElegantOTA.onProgress(onOTAProgress);
+    ElegantOTA.onEnd(onOTAEnd);
+#endif
 }
 
 void http_loop(void) {
     server.handleClient();
+#ifdef USE_ELEGANT_OTA
+    ElegantOTA.loop();
+#endif
 }
