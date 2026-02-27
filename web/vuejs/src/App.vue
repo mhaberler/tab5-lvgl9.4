@@ -98,8 +98,7 @@ onUnmounted(() => {
 					<thead class="text-xs uppercase bg-gray-100 dark:bg-gray-700">
 						<tr>
 							<th class="px-3 py-2">SSID</th>
-							<th class="px-3 py-2">BSSID</th>
-							<th class="px-3 py-2">RSSI</th>
+								<th class="px-3 py-2">RSSI</th>
 							<th class="px-3 py-2">Ch</th>
 							<th class="px-3 py-2">Auth</th>
 						</tr>
@@ -107,8 +106,7 @@ onUnmounted(() => {
 					<tbody>
 						<tr v-for="net in networks" :key="net.bssid" class="border-b dark:border-gray-600" :class="net.connected ? 'bg-green-50 dark:bg-green-900/20' : ''">
 							<td class="px-3 py-2 font-medium">{{ net.ssid }}</td>
-							<td class="px-3 py-2 font-mono text-xs">{{ net.bssid }}</td>
-							<td class="px-3 py-2">{{ net.rssi }} dBm</td>
+								<td class="px-3 py-2">{{ net.rssi }} dBm</td>
 							<td class="px-3 py-2">{{ net.channel }}</td>
 							<td class="px-3 py-2">{{ net.auth }}</td>
 						</tr>
