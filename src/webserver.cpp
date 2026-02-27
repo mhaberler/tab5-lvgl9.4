@@ -16,6 +16,7 @@
 WebServer server(80);
 
 bool ledState = false;
+extern void publishStatus();
 
 #ifdef USE_ELEGANT_OTA
 unsigned long ota_progress_millis = 0;
@@ -77,6 +78,7 @@ void http_setup(void) {
         sendCorsHeaders();
         ledState = !ledState;
         server.send(200, "application/json", getStatusJson());
+        publishStatus();
     });
 
     server.begin();
@@ -91,6 +93,13 @@ void http_setup(void) {
 
 void http_loop(void) {
     server.handleClient();
+
+    static unsigned long lastStatusPublish = 0;
+    if (millis() - lastStatusPublish >= 5000) {
+        lastStatusPublish = millis();
+        publishStatus();
+    }
+
 #ifdef USE_ELEGANT_OTA
     ElegantOTA.loop();
 #endif

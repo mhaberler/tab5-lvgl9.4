@@ -7,6 +7,10 @@ WiFiServer websocket_underlying_server(MQTTWS_PORT);
 PicoWebsocket::Server<::WiFiServer>
 websocket_server(websocket_underlying_server);
 
+extern bool ledState;
+void publishStatus();
+void startWiFiScan();
+
 class CustomMQTTServer : public PicoMQTT::Server {
     using PicoMQTT::Server::Server;
 
@@ -34,12 +38,39 @@ class CustomMQTTServer : public PicoMQTT::Server {
     virtual void on_message(const char *topic,
                             PicoMQTT::IncomingPacket &packet) override {
         log_i("message topic=%s", topic);
+        if (strcmp(topic, "command") == 0) {
+            char buf[128];
+            size_t len = packet.readBytes(buf, sizeof(buf) - 1);
+            buf[len] = '\0';
+            JsonDocument doc;
+            if (!deserializeJson(doc, buf)) {
+                const char* action = doc["action"];
+                if (action && strcmp(action, "toggle") == 0) {
+                    ledState = !ledState;
+                    publishStatus();
+                }
+                if (action && strcmp(action, "wifiscan") == 0) {
+                    startWiFiScan();
+                }
+            }
+            messages++;
+            return;
+        }
         PicoMQTT::Server::Server::on_message(topic, packet);
         messages++;
     }
 };
 
 CustomMQTTServer mqtt(tcp_server, websocket_server);
+
+void publishStatus() {
+    JsonDocument doc;
+    doc["uptime"] = millis() / 1000;
+    doc["led"] = ledState;
+    auto publish = mqtt.begin_publish("status", measureJson(doc));
+    serializeJson(doc, publish);
+    publish.send();
+}
 
 extern "C"
 {

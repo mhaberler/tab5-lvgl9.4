@@ -8,6 +8,7 @@ static const char *hostname = HOSTNAME;
 
 #include "ESP_HostedOTA.h"
 #include <ESPmDNS.h>
+#include <ArduinoJson.h>
 #include <PicoMQTT.h>
 #include <HTTPClient.h>
 #include "mdns.h"
@@ -61,67 +62,49 @@ void onNetworkEvent(arduino_event_id_t event) {
     // }
 }
 void startWiFiScan() {
+    if (scanningWifi) {
+        log_e("wifi scan already running");
+        return;
+    }
     log_w("wifi scan start");
     // WiFi.scanNetworks will return immediately in Async Mode.
     WiFi.scanNetworks(true);  // 'true' turns Async Mode ON
+    scanningWifi = true;
 }
 
-void printScannedNetworks(uint16_t networksFound) {
-    if (networksFound == 0) {
-        Serial.println("no networks found");
-    } else {
-        Serial.println("\nScan done");
-        Serial.print(networksFound);
-        Serial.println(" networks found");
-        Serial.println("Nr | SSID                             | RSSI | CH | Encryption");
-        for (int i = 0; i < networksFound; ++i) {
-            // Print SSID and RSSI for each network found
-            Serial.printf("%2d", i + 1);
-            Serial.print(" | ");
-            Serial.printf("%-32.32s", WiFi.SSID(i).c_str());
-            Serial.print(" | ");
-            Serial.printf("%4ld", WiFi.RSSI(i));
-            Serial.print(" | ");
-            Serial.printf("%2ld", WiFi.channel(i));
-            Serial.print(" | ");
-            switch (WiFi.encryptionType(i)) {
-                case WIFI_AUTH_OPEN:
-                    Serial.print("open");
-                    break;
-                case WIFI_AUTH_WEP:
-                    Serial.print("WEP");
-                    break;
-                case WIFI_AUTH_WPA_PSK:
-                    Serial.print("WPA");
-                    break;
-                case WIFI_AUTH_WPA2_PSK:
-                    Serial.print("WPA2");
-                    break;
-                case WIFI_AUTH_WPA_WPA2_PSK:
-                    Serial.print("WPA+WPA2");
-                    break;
-                case WIFI_AUTH_WPA2_ENTERPRISE:
-                    Serial.print("WPA2-EAP");
-                    break;
-                case WIFI_AUTH_WPA3_PSK:
-                    Serial.print("WPA3");
-                    break;
-                case WIFI_AUTH_WPA2_WPA3_PSK:
-                    Serial.print("WPA2+WPA3");
-                    break;
-                case WIFI_AUTH_WAPI_PSK:
-                    Serial.print("WAPI");
-                    break;
-                default:
-                    Serial.print("unknown");
-            }
-            Serial.println();
-            delay(10);
-        }
-        Serial.println("");
-        // Delete the scan result to free memory for code below.
-        WiFi.scanDelete();
+static const char* authStr(wifi_auth_mode_t mode) {
+    switch (mode) {
+        case WIFI_AUTH_OPEN:            return "open";
+        case WIFI_AUTH_WEP:             return "WEP";
+        case WIFI_AUTH_WPA_PSK:         return "WPA";
+        case WIFI_AUTH_WPA2_PSK:        return "WPA2";
+        case WIFI_AUTH_WPA_WPA2_PSK:    return "WPA+WPA2";
+        case WIFI_AUTH_WPA2_ENTERPRISE: return "WPA2-EAP";
+        case WIFI_AUTH_WPA3_PSK:        return "WPA3";
+        case WIFI_AUTH_WPA2_WPA3_PSK:   return "WPA2+WPA3";
+        case WIFI_AUTH_WAPI_PSK:        return "WAPI";
+        default:                        return "unknown";
     }
+}
+
+void publishScannedNetworks(uint16_t networksFound) {
+    JsonDocument doc;
+    JsonArray arr = doc.to<JsonArray>();
+
+    for (int i = 0; i < networksFound; ++i) {
+        JsonObject net = arr.add<JsonObject>();
+        net["ssid"]    = WiFi.SSID(i);
+        net["bssid"]   = WiFi.BSSIDstr(i);
+        net["rssi"]    = WiFi.RSSI(i);
+        net["channel"] = WiFi.channel(i);
+        net["auth"]    = authStr(WiFi.encryptionType(i));
+    }
+
+    auto publish = mqtt.begin_publish("/wifi/networks", measureJson(doc));
+    serializeJson(doc, publish);
+    publish.send();
+
+    WiFi.scanDelete();
 }
 
 
@@ -237,22 +220,22 @@ void wifi_loop() {
     static unsigned long lastScanTime = 0;
     unsigned long now = millis();
 
-    if (now - lastScanTime >= 20000) {
-        lastScanTime = now;
-        scanningWifi = true;
-        startWiFiScan();
-    }
+    // if (now - lastScanTime >= 20000) {
+    //     lastScanTime = now;
+    //     scanningWifi = true;
+    //     startWiFiScan();
+    // }
 
     if (scanningWifi) {
         int16_t WiFiScanStatus = WiFi.scanComplete();
         if (WiFiScanStatus < 0) {  // it is busy scanning or got an error
             if (WiFiScanStatus == WIFI_SCAN_FAILED) {
                 Serial.println("WiFi Scan has failed. Starting again.");
-                startWiFiScan();
+                // startWiFiScan();
             }
             // other option is status WIFI_SCAN_RUNNING - just wait.
         } else {  // Found Zero or more Wireless Networks
-            printScannedNetworks(WiFiScanStatus);
+            publishScannedNetworks(WiFiScanStatus);
             scanningWifi = false;
         }
     }
