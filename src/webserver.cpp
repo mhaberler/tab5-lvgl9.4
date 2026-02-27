@@ -1,6 +1,7 @@
 #include <WiFi.h>
 #include <NetworkClient.h>
 #include <WebServer.h>
+#include <ArduinoJson.h>
 #include "svelteesp32webserver.h"
 
 
@@ -44,7 +45,12 @@ void onOTAEnd(bool success) {
 #endif
 
 String getStatusJson() {
-    return "{\"uptime\":" + String(millis() / 1000) + ",\"led\":" + (ledState ? "true" : "false") + "}";
+    JsonDocument doc;
+    doc["uptime"] = millis() / 1000;
+    doc["led"] = ledState;
+    String out;
+    serializeJson(doc, out);
+    return out;
 }
 
 // Send CORS headers so the Vite dev server (different origin) can reach us.
