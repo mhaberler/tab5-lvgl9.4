@@ -47,15 +47,28 @@ String getStatusJson() {
     return "{\"uptime\":" + String(millis() / 1000) + ",\"led\":" + (ledState ? "true" : "false") + "}";
 }
 
+// Send CORS headers so the Vite dev server (different origin) can reach us.
+static void sendCorsHeaders() {
+    server.sendHeader("Access-Control-Allow-Origin", "*");
+    server.sendHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    server.sendHeader("Access-Control-Allow-Headers", "Content-Type");
+}
+
 void http_setup(void) {
 
     initSvelteStaticFiles(&server);
 
+    // Handle CORS preflight for all /api/* routes
+    server.on("/api/status",  HTTP_OPTIONS, []() { sendCorsHeaders(); server.send(204); });
+    server.on("/api/toggle",  HTTP_OPTIONS, []() { sendCorsHeaders(); server.send(204); });
+
     server.on("/api/status", HTTP_GET, []() {
+        sendCorsHeaders();
         server.send(200, "application/json", getStatusJson());
     });
 
     server.on("/api/toggle", HTTP_POST, []() {
+        sendCorsHeaders();
         ledState = !ledState;
         server.send(200, "application/json", getStatusJson());
     });

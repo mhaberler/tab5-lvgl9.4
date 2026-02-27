@@ -3,6 +3,7 @@
 
 	import { Badge, Button, Card, Navbar, NavBrand } from 'flowbite-svelte';
 	import { onMount } from 'svelte';
+	import { apiFetch } from '$lib/api';
 
 	let uptime = $state(0);
 	let ledState = $state(false);
@@ -17,8 +18,7 @@
 
 	async function fetchStatus() {
 		try {
-			const result = await fetch('/api/status');
-			const data = await result.json();
+			const data = await apiFetch<{ uptime: number; led: boolean }>('/api/status');
 			uptime = data.uptime;
 			ledState = data.led;
 			error = '';
@@ -30,8 +30,7 @@
 	async function toggleLed() {
 		loading = true;
 		try {
-			const result = await fetch('/api/toggle', { method: 'POST' });
-			const data = await result.json();
+			const data = await apiFetch<{ uptime: number; led: boolean }>('/api/toggle', { method: 'POST' });
 			uptime = data.uptime;
 			ledState = data.led;
 			error = '';
