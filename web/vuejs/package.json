@@ -27,6 +27,7 @@
 		"typescript": "^5.9.3",
 		"vite": "^7.3.1",
 		"svelteesp32": "^2.1.0",
+		"vite-plugin-devtools-json": "^0.1.0",
 		"vue-tsc": "^2.2.0"
 	}
 }

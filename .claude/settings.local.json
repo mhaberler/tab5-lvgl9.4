@@ -4,7 +4,8 @@
       "Bash(bun i)",
       "Bash(bun run build)",
       "Bash(node -e \"const m = require\\(''./node_modules/flowbite-vue/dist/flowbite-vue.js''\\); console.log\\(Object.keys\\(m\\).filter\\(k => k.toLowerCase\\(\\).includes\\(''nav''\\)\\)\\)\")",
-      "Bash(bun run generate)"
+      "Bash(bun run generate)",
+      "WebFetch(domain:github.com)"
     ]
   }
 }
