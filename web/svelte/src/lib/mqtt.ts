@@ -11,6 +11,8 @@ import mqtt from 'mqtt';
 export type StatusData = { uptime: number; led: boolean };
 export type StatusCallback = (data: StatusData) => void;
 export type ConnectionCallback = (connected: boolean) => void;
+export type NetworkEntry = { ssid: string; bssid: string; rssi: number; channel: number; auth: string };
+export type NetworksCallback = (networks: NetworkEntry[]) => void;
 
 const MQTTWS_PORT = 8883;
 
@@ -25,7 +27,7 @@ function getMqttUrl(): string {
 
 let client: mqtt.MqttClient | null = null;
 
-export function connectMqtt(onStatus: StatusCallback, onConnection?: ConnectionCallback) {
+export function connectMqtt(onStatus: StatusCallback, onConnection?: ConnectionCallback, onNetworks?: NetworksCallback) {
 	const url = getMqttUrl();
 	client = mqtt.connect(url, {
 		clientId: `web_${Math.random().toString(36).slice(2, 8)}`,
@@ -35,16 +37,20 @@ export function connectMqtt(onStatus: StatusCallback, onConnection?: ConnectionC
 	client.on('connect', () => {
 		onConnection?.(true);
 		client!.subscribe('status');
+		client!.subscribe('/wifi/networks');
 	});
 
 	client.on('close', () => {
 		onConnection?.(false);
 	});
 
-	client.on('message', (_topic: string, payload: Buffer) => {
+	client.on('message', (topic: string, payload: Buffer) => {
 		try {
-			const data = JSON.parse(payload.toString()) as StatusData;
-			onStatus(data);
+			if (topic === 'status') {
+				onStatus(JSON.parse(payload.toString()) as StatusData);
+			} else if (topic === '/wifi/networks') {
+				onNetworks?.(JSON.parse(payload.toString()) as NetworkEntry[]);
+			}
 		} catch {
 			// ignore malformed messages
 		}

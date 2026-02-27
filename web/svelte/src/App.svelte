@@ -3,12 +3,14 @@
 
 	import { Badge, Button, Card, Navbar, NavBrand } from 'flowbite-svelte';
 	import { onDestroy, onMount } from 'svelte';
-	import { connectMqtt, disconnectMqtt, sendCommand } from '$lib/mqtt';
+	import { type NetworkEntry, connectMqtt, disconnectMqtt, sendCommand } from '$lib/mqtt';
 
 	let uptime = $state(0);
 	let ledState = $state(false);
 	let error = $state('');
 	let connected = $state(false);
+	let networks = $state<NetworkEntry[]>([]);
+	let scanning = $state(false);
 
 	const images = [
 		{ alt: 'ESP32 board', src: './gallery/esp32-1.webp' },
@@ -18,6 +20,11 @@
 
 	function toggleLed() {
 		sendCommand('toggle');
+	}
+
+	function scanWifi() {
+		scanning = true;
+		sendCommand('wifiscan');
 	}
 
 	onMount(() => {
@@ -32,6 +39,10 @@
 				if (!conn) {
 					error = 'MQTT disconnected. Reconnecting...';
 				}
+			},
+			(nets) => {
+				networks = nets;
+				scanning = false;
 			}
 		);
 	});
@@ -72,6 +83,43 @@
 		<Button onclick={toggleLed} disabled={!connected}>
 			Toggle LED
 		</Button>
+	</Card>
+
+	<Card class="mb-6 p-4">
+		<h5 class="mb-4 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+			WiFi Networks
+		</h5>
+		<Button onclick={scanWifi} disabled={!connected || scanning} class="mb-4">
+			{scanning ? 'Scanning...' : 'Scan WiFi'}
+		</Button>
+		{#if networks.length > 0}
+			<div class="overflow-x-auto">
+				<table class="w-full text-sm text-left text-gray-700 dark:text-gray-300">
+					<thead class="text-xs uppercase bg-gray-100 dark:bg-gray-700">
+						<tr>
+							<th class="px-3 py-2">SSID</th>
+							<th class="px-3 py-2">BSSID</th>
+							<th class="px-3 py-2">RSSI</th>
+							<th class="px-3 py-2">Ch</th>
+							<th class="px-3 py-2">Auth</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each networks as net (net.bssid)}
+							<tr class="border-b dark:border-gray-600">
+								<td class="px-3 py-2 font-medium">{net.ssid}</td>
+								<td class="px-3 py-2 font-mono text-xs">{net.bssid}</td>
+								<td class="px-3 py-2">{net.rssi} dBm</td>
+								<td class="px-3 py-2">{net.channel}</td>
+								<td class="px-3 py-2">{net.auth}</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		{:else if !scanning}
+			<p class="text-gray-500 dark:text-gray-400 text-sm">No networks found. Press Scan WiFi to start.</p>
+		{/if}
 	</Card>
 
 	<h5 class="mb-4 text-xl font-bold text-gray-900 dark:text-white">Gallery (for demo only)</h5>

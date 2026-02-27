@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { FwbBadge, FwbButton, FwbCard, FwbNavbar, FwbNavbarLogo } from 'flowbite-vue';
 import { onMounted, onUnmounted, ref } from 'vue';
-import { connectMqtt, disconnectMqtt, sendCommand } from '$lib/mqtt';
+import { type NetworkEntry, connectMqtt, disconnectMqtt, sendCommand } from '$lib/mqtt';
 
 const uptime = ref(0);
 const ledState = ref(false);
 const error = ref('');
 const connected = ref(false);
+const networks = ref<NetworkEntry[]>([]);
+const scanning = ref(false);
 
 const images = [
 	{ alt: 'ESP32 board', src: './gallery/esp32-1.webp' },
@@ -16,6 +18,11 @@ const images = [
 
 function toggleLed() {
 	sendCommand('toggle');
+}
+
+function scanWifi() {
+	scanning.value = true;
+	sendCommand('wifiscan');
 }
 
 onMounted(() => {
@@ -30,6 +37,10 @@ onMounted(() => {
 			if (!conn) {
 				error.value = 'MQTT disconnected. Reconnecting...';
 			}
+		},
+		(nets) => {
+			networks.value = nets;
+			scanning.value = false;
 		}
 	);
 });
@@ -69,15 +80,39 @@ onUnmounted(() => {
 			</FwbButton>
 		</FwbCard>
 
-		<h5 class="mb-4 text-xl font-bold text-gray-900 dark:text-white">Gallery (for demo only)</h5>
-		<div class="grid grid-cols-1 gap-4 md:grid-cols-3">
-			<img
-				v-for="image in images"
-				:key="image.src"
-				:src="image.src"
-				:alt="image.alt"
-				class="h-auto max-w-full rounded-lg"
-			/>
-		</div>
+
+		<FwbCard class="mb-6 p-4">
+			<h5 class="mb-4 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+				WiFi Networks
+			</h5>
+			<FwbButton @click="scanWifi" :disabled="!connected || scanning" class="mb-4">
+				{{ scanning ? 'Scanning...' : 'Scan WiFi' }}
+			</FwbButton>
+			<div v-if="networks.length > 0" class="overflow-x-auto">
+				<table class="w-full text-sm text-left text-gray-700 dark:text-gray-300">
+					<thead class="text-xs uppercase bg-gray-100 dark:bg-gray-700">
+						<tr>
+							<th class="px-3 py-2">SSID</th>
+							<th class="px-3 py-2">BSSID</th>
+							<th class="px-3 py-2">RSSI</th>
+							<th class="px-3 py-2">Ch</th>
+							<th class="px-3 py-2">Auth</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr v-for="net in networks" :key="net.bssid" class="border-b dark:border-gray-600">
+							<td class="px-3 py-2 font-medium">{{ net.ssid }}</td>
+							<td class="px-3 py-2 font-mono text-xs">{{ net.bssid }}</td>
+							<td class="px-3 py-2">{{ net.rssi }} dBm</td>
+							<td class="px-3 py-2">{{ net.channel }}</td>
+							<td class="px-3 py-2">{{ net.auth }}</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+			<p v-else-if="!scanning" class="text-gray-500 dark:text-gray-400 text-sm">
+				No networks found. Press Scan WiFi to start.
+			</p>
+		</FwbCard>
 	</div>
 </template>
