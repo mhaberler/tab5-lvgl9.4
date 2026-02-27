@@ -110,6 +110,8 @@ void publishScannedNetworks(uint16_t networksFound) {
 }
 
 
+JsonDocument wifiCredentials;
+
 static void loadWifiCredentials() {
     Preferences prefs;
     prefs.begin("wifi", false);
@@ -142,12 +144,11 @@ static void loadWifiCredentials() {
     }
     prefs.end();
 
-    JsonDocument doc;
-    if (deserializeJson(doc, json)) {
+    if (deserializeJson(wifiCredentials, json)) {
         log_e("wifi creds: JSON parse failed");
         return;
     }
-    for (JsonObject cred : doc.as<JsonArray>()) {
+    for (JsonObject cred : wifiCredentials.as<JsonArray>()) {
         const char* ssid = cred["ssid"];
         const char* pw   = cred["pw"] | "";
         if (ssid && ssid[0]) {
