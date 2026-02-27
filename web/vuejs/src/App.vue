@@ -11,12 +11,6 @@ const networks = ref<NetworkEntry[]>([]);
 const scanning = ref(false);
 let initialScan = false;
 
-const images = [
-	{ alt: 'ESP32 board', src: './gallery/esp32-1.webp' },
-	{ alt: 'ESP32 setup', src: './gallery/esp32-2.jpg' },
-	{ alt: 'ESP32 project', src: './gallery/esp32-3.webp' }
-];
-
 function toggleLed() {
 	sendCommand('toggle');
 }
@@ -104,7 +98,7 @@ onUnmounted(() => {
 						</tr>
 					</thead>
 					<tbody>
-						<tr v-for="net in networks" :key="net.bssid" class="border-b dark:border-gray-600" :class="net.connected ? 'bg-green-50 dark:bg-green-900/20' : ''">
+						<tr v-for="net in networks" :key="net.bssid" class="border-b dark:border-gray-600" :class="net.connected ? 'bg-green-50 dark:bg-green-900/20' : net.known ? 'bg-blue-50 dark:bg-blue-900/20' : ''">
 							<td class="px-3 py-2 font-medium">{{ net.ssid }}</td>
 								<td class="px-3 py-2">{{ net.rssi }} dBm</td>
 							<td class="px-3 py-2">{{ net.channel }}</td>

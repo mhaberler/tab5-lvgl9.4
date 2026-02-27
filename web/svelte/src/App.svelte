@@ -110,7 +110,7 @@
 					</thead>
 					<tbody>
 						{#each networks as net (net.bssid)}
-							<tr class="border-b dark:border-gray-600 {net.connected ? 'bg-green-50 dark:bg-green-900/20' : ''}">
+							<tr class="border-b dark:border-gray-600 {net.connected ? 'bg-green-50 dark:bg-green-900/20' : net.known ? 'bg-blue-50 dark:bg-blue-900/20' : ''}">
 								<td class="px-3 py-2 font-medium">{net.ssid}</td>
 								<td class="px-3 py-2">{net.rssi} dBm</td>
 								<td class="px-3 py-2">{net.channel}</td>

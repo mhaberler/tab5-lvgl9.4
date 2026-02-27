@@ -38,6 +38,7 @@ void http_loop();
 // }
 
 String macAddress;
+JsonDocument wifiCredentials;
 
 void getMacAddress(String &macStr) {
     // Get MAC address
@@ -100,6 +101,11 @@ void publishScannedNetworks(uint16_t networksFound) {
         net["channel"] = WiFi.channel(i);
         net["auth"]    = authStr(WiFi.encryptionType(i));
         net["connected"] = (wifi_status == WL_CONNECTED) && (WiFi.SSID(i) == WiFi.STA.SSID());
+        bool known = false;
+        for (JsonObject cred : wifiCredentials.as<JsonArray>()) {
+            if (WiFi.SSID(i) == cred["ssid"].as<const char*>()) { known = true; break; }
+        }
+        net["known"] = known;
     }
 
     auto publish = mqtt.begin_publish("/wifi/networks", measureJson(doc));
@@ -110,7 +116,7 @@ void publishScannedNetworks(uint16_t networksFound) {
 }
 
 
-JsonDocument wifiCredentials;
+
 
 static void loadWifiCredentials() {
     Preferences prefs;
