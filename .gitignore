@@ -7,3 +7,5 @@
 web/svelte/dist/*
 node_modules/*
 
+web/vuejs/dist
+web/vuejs/node_modules/
