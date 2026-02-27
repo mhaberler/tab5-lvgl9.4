@@ -1,11 +1,12 @@
 import vue from '@vitejs/plugin-vue';
+import vueJsx from '@vitejs/plugin-vue-jsx';
 import tailwindcss from '@tailwindcss/vite';
 import devtoolsJson from 'vite-plugin-devtools-json';
 import path from 'path';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-	plugins: [vue(), tailwindcss(), devtoolsJson()],
+	plugins: [vue(), vueJsx(), tailwindcss(), devtoolsJson()],
 	build: {
 		target: 'esnext',
 		sourcemap: false,
