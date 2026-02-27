@@ -9,7 +9,7 @@
 	},
 	"scripts": {
 		"dev": "vite dev --host",
-		"build": "vite build && gzip -c ./dist/favicon.png > ./dist/favicon.png.gz && cp ./dist/gallery/esp32-2.jpg ./dist/gallery/esp32-2a.jpg",
+		"build": "vite build && gzip -c ./dist/favicon.png > ./dist/favicon.png.gz",
 		"generate": "npx svelteesp32 -e webserver -s dist -o ../../include/svelteesp32webserver.h  --etag=true --gzip=true",
 		"preview": "vite preview",
 		"ts:check": "svelte-check --tsconfig ./tsconfig.json",

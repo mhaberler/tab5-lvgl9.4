@@ -11,6 +11,7 @@
 	let connected = $state(false);
 	let networks = $state<NetworkEntry[]>([]);
 	let scanning = $state(false);
+	let initialScan = false;
 
 	const images = [
 		{ alt: 'ESP32 board', src: './gallery/esp32-1.webp' },
@@ -36,6 +37,10 @@
 			},
 			(conn) => {
 				connected = conn;
+				if (conn && !initialScan) {
+					initialScan = true;
+					scanWifi();
+				}
 				if (!conn) {
 					error = 'MQTT disconnected. Reconnecting...';
 				}
@@ -70,7 +75,7 @@
 		</div>
 	{/if}
 
-	<Card class="mb-6 p-4">
+	<Card size="xl" class="mb-6 p-4">
 		<h5 class="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
 			ESP32 Control
 		</h5>
@@ -80,16 +85,16 @@
 			<span class="text-gray-700 dark:text-gray-300">LED:</span>
 			<Badge color={ledState ? 'green' : 'gray'}>{ledState ? 'ON' : 'OFF'}</Badge>
 		</div>
-		<Button onclick={toggleLed} disabled={!connected}>
+		<Button onclick={toggleLed} disabled={!connected} class="w-fit">
 			Toggle LED
 		</Button>
 	</Card>
 
-	<Card class="mb-6 p-4">
+	<Card size="xl" class="mb-6 p-4">
 		<h5 class="mb-4 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
 			WiFi Networks
 		</h5>
-		<Button onclick={scanWifi} disabled={!connected || scanning} class="mb-4">
+		<Button onclick={scanWifi} disabled={!connected || scanning} class="mb-4 w-fit">
 			{scanning ? 'Scanning...' : 'Scan WiFi'}
 		</Button>
 		{#if networks.length > 0}
@@ -106,7 +111,7 @@
 					</thead>
 					<tbody>
 						{#each networks as net (net.bssid)}
-							<tr class="border-b dark:border-gray-600">
+							<tr class="border-b dark:border-gray-600 {net.connected ? 'bg-green-50 dark:bg-green-900/20' : ''}">
 								<td class="px-3 py-2 font-medium">{net.ssid}</td>
 								<td class="px-3 py-2 font-mono text-xs">{net.bssid}</td>
 								<td class="px-3 py-2">{net.rssi} dBm</td>
@@ -122,10 +127,4 @@
 		{/if}
 	</Card>
 
-	<h5 class="mb-4 text-xl font-bold text-gray-900 dark:text-white">Gallery (for demo only)</h5>
-	<div class="grid grid-cols-1 gap-4 md:grid-cols-3">
-		{#each images as image (image.src)}
-			<img src={image.src} alt={image.alt} class="h-auto max-w-full rounded-lg" />
-		{/each}
-	</div>
 </div>

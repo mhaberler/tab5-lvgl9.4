@@ -9,6 +9,7 @@ const error = ref('');
 const connected = ref(false);
 const networks = ref<NetworkEntry[]>([]);
 const scanning = ref(false);
+let initialScan = false;
 
 const images = [
 	{ alt: 'ESP32 board', src: './gallery/esp32-1.webp' },
@@ -34,6 +35,10 @@ onMounted(() => {
 		},
 		(conn) => {
 			connected.value = conn;
+			if (conn && !initialScan) {
+				initialScan = true;
+				scanWifi();
+			}
 			if (!conn) {
 				error.value = 'MQTT disconnected. Reconnecting...';
 			}
@@ -100,7 +105,7 @@ onUnmounted(() => {
 						</tr>
 					</thead>
 					<tbody>
-						<tr v-for="net in networks" :key="net.bssid" class="border-b dark:border-gray-600">
+						<tr v-for="net in networks" :key="net.bssid" class="border-b dark:border-gray-600" :class="net.connected ? 'bg-green-50 dark:bg-green-900/20' : ''">
 							<td class="px-3 py-2 font-medium">{{ net.ssid }}</td>
 							<td class="px-3 py-2 font-mono text-xs">{{ net.bssid }}</td>
 							<td class="px-3 py-2">{{ net.rssi }} dBm</td>

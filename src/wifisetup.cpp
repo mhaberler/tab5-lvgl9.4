@@ -98,6 +98,7 @@ void publishScannedNetworks(uint16_t networksFound) {
         net["rssi"]    = WiFi.RSSI(i);
         net["channel"] = WiFi.channel(i);
         net["auth"]    = authStr(WiFi.encryptionType(i));
+        net["connected"] = (wifi_status == WL_CONNECTED) && (WiFi.SSID(i) == WiFi.STA.SSID());
     }
 
     auto publish = mqtt.begin_publish("/wifi/networks", measureJson(doc));

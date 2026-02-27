@@ -11,7 +11,7 @@ import mqtt from 'mqtt';
 export type StatusData = { uptime: number; led: boolean };
 export type StatusCallback = (data: StatusData) => void;
 export type ConnectionCallback = (connected: boolean) => void;
-export type NetworkEntry = { ssid: string; bssid: string; rssi: number; channel: number; auth: string };
+export type NetworkEntry = { ssid: string; bssid: string; rssi: number; channel: number; auth: string; connected?: boolean };
 export type NetworksCallback = (networks: NetworkEntry[]) => void;
 
 const MQTTWS_PORT = 8883;
