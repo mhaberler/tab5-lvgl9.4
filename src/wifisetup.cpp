@@ -9,6 +9,7 @@ static const char *hostname = HOSTNAME;
 #include "ESP_HostedOTA.h"
 #include <ESPmDNS.h>
 #include <ArduinoJson.h>
+#include <Preferences.h>
 #include <PicoMQTT.h>
 #include <HTTPClient.h>
 #include "mdns.h"
@@ -109,6 +110,53 @@ void publishScannedNetworks(uint16_t networksFound) {
 }
 
 
+static void loadWifiCredentials() {
+    Preferences prefs;
+    prefs.begin("wifi", false);
+    String json = prefs.getString("creds", "");
+
+    if (json.isEmpty()) {
+        JsonDocument seed;
+        JsonArray arr = seed.to<JsonArray>();
+#ifdef SSID1
+        { JsonObject o = arr.add<JsonObject>(); o["ssid"] = SSID1; o["pw"] = PW1; }
+#endif
+#ifdef SSID2
+        { JsonObject o = arr.add<JsonObject>(); o["ssid"] = SSID2; o["pw"] = PW2; }
+#endif
+#ifdef SSID3
+        { JsonObject o = arr.add<JsonObject>(); o["ssid"] = SSID3; o["pw"] = PW3; }
+#endif
+#ifdef SSID4
+        { JsonObject o = arr.add<JsonObject>(); o["ssid"] = SSID4; o["pw"] = PW4; }
+#endif
+#ifdef SSID5
+        { JsonObject o = arr.add<JsonObject>(); o["ssid"] = SSID5; o["pw"] = PW5; }
+#endif
+#ifdef SSID6
+        { JsonObject o = arr.add<JsonObject>(); o["ssid"] = SSID6; o["pw"] = PW6; }
+#endif
+        serializeJson(seed, json);
+        prefs.putString("creds", json);
+        log_i("wifi creds: seeded %u entries from build defines", arr.size());
+    }
+    prefs.end();
+
+    JsonDocument doc;
+    if (deserializeJson(doc, json)) {
+        log_e("wifi creds: JSON parse failed");
+        return;
+    }
+    for (JsonObject cred : doc.as<JsonArray>()) {
+        const char* ssid = cred["ssid"];
+        const char* pw   = cred["pw"] | "";
+        if (ssid && ssid[0]) {
+            wifiMulti.addAP(ssid, pw);
+            log_w("wifi creds: addAP %s", ssid);
+        }
+    }
+}
+
 void wifi_setup() {
 #ifdef BOARD_HAS_SDIO_ESP_HOSTED
     WiFi.setPins(BOARD_SDIO_ESP_HOSTED_CLK, BOARD_SDIO_ESP_HOSTED_CMD, BOARD_SDIO_ESP_HOSTED_D0,
@@ -144,24 +192,7 @@ void wifi_setup() {
     // WiFi.setBandMode(WIFI_BAND_MODE_5G_ONLY);
     // WiFi.setBandMode(WIFI_BAND_MODE_2G_ONLY);
 
-#ifdef SSID1
-    wifiMulti.addAP(SSID1, PW1);
-#endif
-#ifdef SSID2
-    wifiMulti.addAP(SSID2, PW2);
-#endif
-#ifdef SSID3
-    wifiMulti.addAP(SSID3, PW3);
-#endif
-#ifdef SSID4
-    wifiMulti.addAP(SSID4, PW4);
-#endif
-#ifdef SSID5
-    wifiMulti.addAP(SSID5, PW5);
-#endif
-#ifdef SSID6
-    wifiMulti.addAP(SSID6, PW6);
-#endif
+    loadWifiCredentials();
     // These options can help when you need ANY kind of wifi connection to get a config file, report errors, etc.
     wifiMulti.setStrictMode(false);  // Default is true.  Library will disconnect and forget currently connected AP if it's not in the AP list.
     wifiMulti.setAllowOpenAP(true);  // Default is false.  True adds open APs to the AP list.
