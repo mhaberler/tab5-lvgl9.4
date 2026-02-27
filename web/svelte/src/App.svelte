@@ -2,13 +2,13 @@
 	import './app.postcss';
 
 	import { Badge, Button, Card, Navbar, NavBrand } from 'flowbite-svelte';
-	import { onMount } from 'svelte';
-	import { apiFetch } from '$lib/api';
+	import { onDestroy, onMount } from 'svelte';
+	import { connectMqtt, disconnectMqtt, sendCommand } from '$lib/mqtt';
 
 	let uptime = $state(0);
 	let ledState = $state(false);
 	let error = $state('');
-	let loading = $state(false);
+	let connected = $state(false);
 
 	const images = [
 		{ alt: 'ESP32 board', src: './gallery/esp32-1.webp' },
@@ -16,33 +16,28 @@
 		{ alt: 'ESP32 project', src: './gallery/esp32-3.webp' }
 	];
 
-	async function fetchStatus() {
-		try {
-			const data = await apiFetch<{ uptime: number; led: boolean }>('/api/status');
-			uptime = data.uptime;
-			ledState = data.led;
-			error = '';
-		} catch {
-			error = 'Could not reach ESP32. Make sure the board is connected.';
-		}
-	}
-
-	async function toggleLed() {
-		loading = true;
-		try {
-			const data = await apiFetch<{ uptime: number; led: boolean }>('/api/toggle', { method: 'POST' });
-			uptime = data.uptime;
-			ledState = data.led;
-			error = '';
-		} catch {
-			error = 'Could not reach ESP32. Make sure the board is connected.';
-		} finally {
-			loading = false;
-		}
+	function toggleLed() {
+		sendCommand('toggle');
 	}
 
 	onMount(() => {
-		fetchStatus();
+		connectMqtt(
+			(data) => {
+				uptime = data.uptime;
+				ledState = data.led;
+				error = '';
+			},
+			(conn) => {
+				connected = conn;
+				if (!conn) {
+					error = 'MQTT disconnected. Reconnecting...';
+				}
+			}
+		);
+	});
+
+	onDestroy(() => {
+		disconnectMqtt();
 	});
 </script>
 
@@ -74,8 +69,8 @@
 			<span class="text-gray-700 dark:text-gray-300">LED:</span>
 			<Badge color={ledState ? 'green' : 'gray'}>{ledState ? 'ON' : 'OFF'}</Badge>
 		</div>
-		<Button onclick={toggleLed} disabled={loading}>
-			{loading ? 'Toggling...' : 'Toggle LED'}
+		<Button onclick={toggleLed} disabled={!connected}>
+			Toggle LED
 		</Button>
 	</Card>
 

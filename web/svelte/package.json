@@ -20,6 +20,9 @@
 		"all": "npm run format:fix && npm run lint:fix && npm run ts:check && npm run build",
 		"npm:reinstall": "rm -rf ./node_modules && rm -f ./package-lock.json && bun i && bun i"
 	},
+	"dependencies": {
+		"mqtt": "^5.0.0"
+	},
 	"devDependencies": {
 		"@eslint/eslintrc": "^3.3.4",
 		"@eslint/js": "^10.0.1",
