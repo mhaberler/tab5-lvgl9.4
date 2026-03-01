@@ -13,6 +13,7 @@ export type StatusCallback = (data: StatusData) => void;
 export type ConnectionCallback = (connected: boolean) => void;
 export type NetworkEntry = { ssid: string; bssid: string; rssi: number; channel: number; auth: string; connected?: boolean; known?: boolean };
 export type NetworksCallback = (networks: NetworkEntry[]) => void;
+export type CredentialsCallback = (ssids: string[]) => void;
 
 const MQTTWS_PORT = 8883;
 
@@ -27,7 +28,7 @@ function getMqttUrl(): string {
 
 let client: mqtt.MqttClient | null = null;
 
-export function connectMqtt(onStatus: StatusCallback, onConnection?: ConnectionCallback, onNetworks?: NetworksCallback) {
+export function connectMqtt(onStatus: StatusCallback, onConnection?: ConnectionCallback, onNetworks?: NetworksCallback, onCredentials?: CredentialsCallback) {
 	const url = getMqttUrl();
 	client = mqtt.connect(url, {
 		clientId: `web_${Math.random().toString(36).slice(2, 8)}`,
@@ -38,6 +39,7 @@ export function connectMqtt(onStatus: StatusCallback, onConnection?: ConnectionC
 		onConnection?.(true);
 		client!.subscribe('status');
 		client!.subscribe('/wifi/networks');
+		client!.subscribe('/wifi/credentials');
 	});
 
 	client.on('close', () => {
@@ -46,10 +48,20 @@ export function connectMqtt(onStatus: StatusCallback, onConnection?: ConnectionC
 
 	client.on('message', (topic: string, payload: Buffer) => {
 		try {
-			if (topic === 'status') {
-				onStatus(JSON.parse(payload.toString()) as StatusData);
-			} else if (topic === '/wifi/networks') {
-				onNetworks?.(JSON.parse(payload.toString()) as NetworkEntry[]);
+			const data = JSON.parse(payload.toString());
+			switch (topic) {
+				case 'status': {
+					onStatus(data as StatusData);
+					break;
+				}
+				case '/wifi/networks': {
+					onNetworks?.(data as NetworkEntry[]);
+					break;
+				}
+				case '/wifi/credentials': {
+					onCredentials?.(data as string[]);
+					break;
+				}
 			}
 		} catch {
 			// ignore malformed messages
@@ -57,8 +69,8 @@ export function connectMqtt(onStatus: StatusCallback, onConnection?: ConnectionC
 	});
 }
 
-export function sendCommand(action: string) {
-	client?.publish('command', JSON.stringify({ action }));
+export function sendCommand(action: string, payload?: Record<string, string>) {
+	client?.publish('command', JSON.stringify({ action, ...payload }));
 }
 
 export function disconnectMqtt() {

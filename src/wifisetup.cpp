@@ -164,6 +164,27 @@ static void loadWifiCredentials() {
     }
 }
 
+void saveWifiCredentials() {
+    Preferences prefs;
+    prefs.begin("wifi", false);
+    String json;
+    serializeJson(wifiCredentials, json);
+    prefs.putString("creds", json);
+    prefs.end();
+    log_i("wifi creds: saved %u entries to NVS", wifiCredentials.as<JsonArray>().size());
+}
+
+void publishWifiCredentials() {
+    JsonDocument doc;
+    JsonArray arr = doc.to<JsonArray>();
+    for (JsonObject cred : wifiCredentials.as<JsonArray>()) {
+        arr.add(cred["ssid"]);
+    }
+    auto publish = mqtt.begin_publish("/wifi/credentials", measureJson(doc));
+    serializeJson(doc, publish);
+    publish.send();
+}
+
 void wifi_setup() {
 #ifdef BOARD_HAS_SDIO_ESP_HOSTED
     WiFi.setPins(BOARD_SDIO_ESP_HOSTED_CLK, BOARD_SDIO_ESP_HOSTED_CMD, BOARD_SDIO_ESP_HOSTED_D0,

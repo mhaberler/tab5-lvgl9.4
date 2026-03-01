@@ -1,3 +1,5 @@
+#include <WiFi.h>
+#include <WiFiMulti.h>
 #include <PicoMQTT.h>
 #include <PicoWebsocket.h>
 #include <ArduinoJson.h>
@@ -8,8 +10,12 @@ PicoWebsocket::Server<::WiFiServer>
 websocket_server(websocket_underlying_server);
 
 extern bool ledState;
+extern JsonDocument wifiCredentials;
+extern WiFiMulti wifiMulti;
 void publishStatus();
 void startWiFiScan();
+void saveWifiCredentials();
+void publishWifiCredentials();
 
 class CustomMQTTServer : public PicoMQTT::Server {
     using PicoMQTT::Server::Server;
@@ -39,7 +45,7 @@ class CustomMQTTServer : public PicoMQTT::Server {
                             PicoMQTT::IncomingPacket &packet) override {
         log_i("message topic=%s", topic);
         if (strcmp(topic, "command") == 0) {
-            char buf[128];
+            char buf[256];
             size_t len = packet.readBytes(buf, sizeof(buf) - 1);
             buf[len] = '\0';
             JsonDocument doc;
@@ -51,6 +57,48 @@ class CustomMQTTServer : public PicoMQTT::Server {
                 }
                 if (action && strcmp(action, "wifiscan") == 0) {
                     startWiFiScan();
+                }
+                if (action && strcmp(action, "restart") == 0) {
+                    ESP.restart();
+                }
+                if (action && strcmp(action, "wifi_save") == 0) {
+                    const char* ssid = doc["ssid"];
+                    const char* pw = doc["pw"] | "";
+                    if (ssid && ssid[0]) {
+                        bool found = false;
+                        for (JsonObject cred : wifiCredentials.as<JsonArray>()) {
+                            if (strcmp(cred["ssid"], ssid) == 0) {
+                                cred["pw"] = pw;
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (!found) {
+                            JsonObject o = wifiCredentials.as<JsonArray>().add<JsonObject>();
+                            o["ssid"] = ssid;
+                            o["pw"] = pw;
+                            wifiMulti.addAP(ssid, pw);
+                        }
+                        saveWifiCredentials();
+                        publishWifiCredentials();
+                    }
+                }
+                if (action && strcmp(action, "wifi_forget") == 0) {
+                    const char* ssid = doc["ssid"];
+                    if (ssid && ssid[0]) {
+                        JsonArray arr = wifiCredentials.as<JsonArray>();
+                        for (size_t i = 0; i < arr.size(); i++) {
+                            if (strcmp(arr[i]["ssid"], ssid) == 0) {
+                                arr.remove(i);
+                                break;
+                            }
+                        }
+                        saveWifiCredentials();
+                        publishWifiCredentials();
+                    }
+                }
+                if (action && strcmp(action, "wifi_list") == 0) {
+                    publishWifiCredentials();
                 }
             }
             messages++;
