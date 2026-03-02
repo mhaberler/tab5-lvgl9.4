@@ -11,7 +11,15 @@ import mqtt from 'mqtt';
 export type StatusData = { uptime: number; led: boolean };
 export type StatusCallback = (data: StatusData) => void;
 export type ConnectionCallback = (connected: boolean) => void;
-export type NetworkEntry = { ssid: string; bssid: string; rssi: number; channel: number; auth: string; connected?: boolean; known?: boolean };
+export type NetworkEntry = {
+	ssid: string;
+	bssid: string;
+	rssi: number;
+	channel: number;
+	auth: string;
+	connected?: boolean;
+	known?: boolean;
+};
 export type NetworksCallback = (networks: NetworkEntry[]) => void;
 export type CredentialsCallback = (ssids: string[]) => void;
 
@@ -28,7 +36,12 @@ function getMqttUrl(): string {
 
 let client: mqtt.MqttClient | null = null;
 
-export function connectMqtt(onStatus: StatusCallback, onConnection?: ConnectionCallback, onNetworks?: NetworksCallback, onCredentials?: CredentialsCallback) {
+export function connectMqtt(
+	onStatus: StatusCallback,
+	onConnection?: ConnectionCallback,
+	onNetworks?: NetworksCallback,
+	onCredentials?: CredentialsCallback
+) {
 	const url = getMqttUrl();
 	client = mqtt.connect(url, {
 		clientId: `web_${Math.random().toString(36).slice(2, 8)}`,

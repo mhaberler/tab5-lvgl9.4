@@ -114,10 +114,13 @@
 			<Badge color={ledState ? 'green' : 'gray'}>{ledState ? 'ON' : 'OFF'}</Badge>
 		</div>
 		<div class="flex gap-3">
-			<Button onclick={toggleLed} disabled={!connected} class="w-fit">
-				Toggle LED
-			</Button>
-			<Button onclick={() => sendCommand('restart')} disabled={!connected} color="red" class="w-fit">
+			<Button onclick={toggleLed} disabled={!connected} class="w-fit">Toggle LED</Button>
+			<Button
+				onclick={() => sendCommand('restart')}
+				disabled={!connected}
+				color="red"
+				class="w-fit"
+			>
 				Restart
 			</Button>
 		</div>
@@ -128,7 +131,9 @@
 			WiFi Networks
 		</h5>
 		{#if restartRequired}
-			<div class="mb-4 rounded-lg bg-yellow-50 p-3 text-sm text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300">
+			<div
+				class="mb-4 rounded-lg bg-yellow-50 p-3 text-sm text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300"
+			>
 				Credential removed. Restart required for changes to take effect.
 			</div>
 		{/if}
@@ -149,7 +154,13 @@
 					</thead>
 					<tbody>
 						{#each networks as net (net.bssid)}
-							<tr class="border-b dark:border-gray-600 {net.connected ? 'bg-green-50 dark:bg-green-900/20' : net.known ? 'bg-blue-50 dark:bg-blue-900/20' : ''}">
+							<tr
+								class="border-b dark:border-gray-600 {net.connected
+									? 'bg-green-50 dark:bg-green-900/20'
+									: net.known
+										? 'bg-blue-50 dark:bg-blue-900/20'
+										: ''}"
+							>
 								<td class="px-3 py-2 font-medium">{net.ssid}</td>
 								<td class="px-3 py-2">{net.rssi} dBm</td>
 								<td class="px-3 py-2">{net.channel}</td>
@@ -163,13 +174,33 @@
 												bind:value={editingPw}
 												class="w-32 rounded border border-gray-300 px-2 py-1 text-xs dark:border-gray-600 dark:bg-gray-700 dark:text-white"
 											/>
-											<button onclick={() => saveCred(net.ssid, editingPw)} class="text-xs text-green-600 hover:underline dark:text-green-400">OK</button>
-											<button onclick={() => { editingSsid = ''; editingPw = ''; }} class="text-xs text-gray-500 hover:underline dark:text-gray-400">Cancel</button>
+											<button
+												onclick={() => saveCred(net.ssid, editingPw)}
+												class="text-xs text-green-600 hover:underline dark:text-green-400"
+												>OK</button
+											>
+											<button
+												onclick={() => {
+													editingSsid = '';
+													editingPw = '';
+												}}
+												class="text-xs text-gray-500 hover:underline dark:text-gray-400"
+												>Cancel</button
+											>
 										</div>
 									{:else if !net.known}
-										<button onclick={() => { editingSsid = net.ssid; editingPw = ''; }} class="text-xs text-blue-600 hover:underline dark:text-blue-400">Save</button>
+										<button
+											onclick={() => {
+												editingSsid = net.ssid;
+												editingPw = '';
+											}}
+											class="text-xs text-blue-600 hover:underline dark:text-blue-400">Save</button
+										>
 									{:else if !net.connected}
-										<button onclick={() => forgetCred(net.ssid)} class="text-xs text-red-600 hover:underline dark:text-red-400">Forget</button>
+										<button
+											onclick={() => forgetCred(net.ssid)}
+											class="text-xs text-red-600 hover:underline dark:text-red-400">Forget</button
+										>
 									{/if}
 								</td>
 							</tr>
@@ -178,7 +209,9 @@
 				</table>
 			</div>
 		{:else if !scanning}
-			<p class="text-gray-500 dark:text-gray-400 text-sm">No networks found. Press Scan WiFi to start.</p>
+			<p class="text-gray-500 dark:text-gray-400 text-sm">
+				No networks found. Press Scan WiFi to start.
+			</p>
 		{/if}
 		<div class="mt-4 flex items-center gap-2">
 			<input
@@ -193,8 +226,12 @@
 				bind:value={manualPw}
 				class="rounded border border-gray-300 px-2 py-1 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
 			/>
-			<Button onclick={addManual} disabled={!connected || !manualSsid.trim()} size="xs" class="w-fit">Add</Button>
+			<Button
+				onclick={addManual}
+				disabled={!connected || !manualSsid.trim()}
+				size="xs"
+				class="w-fit">Add</Button
+			>
 		</div>
 	</Card>
-
 </div>
