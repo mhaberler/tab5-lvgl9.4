@@ -95,7 +95,7 @@ void http_loop(void) {
     server.handleClient();
 
     static unsigned long lastStatusPublish = 0;
-    if (millis() - lastStatusPublish >= 5000) {
+    if (millis() - lastStatusPublish >= 1000) {
         lastStatusPublish = millis();
         publishStatus();
     }
