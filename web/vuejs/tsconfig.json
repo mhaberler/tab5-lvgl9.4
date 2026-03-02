@@ -1,19 +1,19 @@
 {
-	"compilerOptions": {
-		"strict": true,
-		"target": "ESNext",
-		"useDefineForClassFields": true,
-		"module": "ESNext",
-		"moduleResolution": "bundler",
-		"noEmit": true,
-		"isolatedModules": true,
-		"jsx": "preserve",
-		"lib": ["ESNext", "DOM", "DOM.Iterable"],
-		"skipLibCheck": true,
-		"paths": {
-			"$lib/*": ["./src/lib/*"]
-		}
-	},
-	"include": ["src/**/*.ts", "src/**/*.vue"],
-	"references": [{ "path": "./tsconfig.node.json" }]
+  "compilerOptions": {
+    "strict": true,
+    "target": "ESNext",
+    "useDefineForClassFields": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "noEmit": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "skipLibCheck": true,
+    "paths": {
+      "$lib/*": ["./src/lib/*"]
+    }
+  },
+  "include": ["src/**/*.ts", "src/**/*.vue"],
+  "references": [{ "path": "./tsconfig.node.json" }]
 }

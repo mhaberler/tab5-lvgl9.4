@@ -8,7 +8,7 @@
  * current origin (the ESP32 itself).
  */
 
-const BASE_URL: string = import.meta.env.VITE_API_HOST ?? '';
+const BASE_URL: string = import.meta.env.VITE_API_HOST ?? "";
 
 /**
  * Wrapper around `fetch()` that prepends the configured API host.
@@ -19,12 +19,14 @@ const BASE_URL: string = import.meta.env.VITE_API_HOST ?? '';
  * @throws      On network errors or non-ok HTTP status codes
  */
 export async function apiFetch<T = unknown>(
-	path: string,
-	init?: RequestInit
+  path: string,
+  init?: RequestInit,
 ): Promise<T> {
-	const res = await fetch(`${BASE_URL}${path}`, init);
-	if (!res.ok) {
-		throw new Error(`API ${init?.method ?? 'GET'} ${path} -> ${res.status}`);
-	}
-	return res.json() as Promise<T>;
+  const response = await fetch(`${BASE_URL}${path}`, init);
+  if (!response.ok) {
+    throw new Error(
+      `API ${init?.method ?? "GET"} ${path} -> ${response.status}`,
+    );
+  }
+  return response.json() as Promise<T>;
 }

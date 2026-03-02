@@ -34,7 +34,7 @@ function getMqttUrl(): string {
 	return `ws://${location.hostname}:${MQTTWS_PORT}/mqtt`;
 }
 
-let client: mqtt.MqttClient | null = null;
+let client: mqtt.MqttClient | undefined;
 
 export function connectMqtt(
 	onStatus: StatusCallback,
@@ -88,5 +88,5 @@ export function sendCommand(action: string, payload?: Record<string, string>) {
 
 export function disconnectMqtt() {
 	client?.end();
-	client = null;
+	client = undefined;
 }

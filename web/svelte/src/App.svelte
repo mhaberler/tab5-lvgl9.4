@@ -1,9 +1,8 @@
 <script lang="ts">
-	import './app.postcss';
-
 	import { Badge, Button, Card, Navbar, NavBrand } from 'flowbite-svelte';
 	import { onDestroy, onMount } from 'svelte';
-	import { type NetworkEntry, connectMqtt, disconnectMqtt, sendCommand } from '$lib/mqtt';
+
+	import { connectMqtt, disconnectMqtt, type NetworkEntry, sendCommand } from '$lib/mqtt';
 
 	let uptime = $state(0);
 	let ledState = $state(false);
@@ -17,12 +16,6 @@
 	let editingPw = $state('');
 	let manualSsid = $state('');
 	let manualPw = $state('');
-
-	const images = [
-		{ alt: 'ESP32 board', src: './gallery/esp32-1.webp' },
-		{ alt: 'ESP32 setup', src: './gallery/esp32-2.jpg' },
-		{ alt: 'ESP32 project', src: './gallery/esp32-3.webp' }
-	];
 
 	function toggleLed() {
 		sendCommand('toggle');
@@ -72,10 +65,6 @@
 			(nets) => {
 				networks = nets;
 				scanning = false;
-			},
-			(_ssids) => {
-				// credential list updated — rescan to refresh known flags
-				scanWifi();
 			}
 		);
 	});
@@ -157,9 +146,9 @@
 							<tr
 								class="border-b dark:border-gray-600 {net.connected
 									? 'bg-green-50 dark:bg-green-900/20'
-									: net.known
+									: (net.known
 										? 'bg-blue-50 dark:bg-blue-900/20'
-										: ''}"
+										: '')}"
 							>
 								<td class="px-3 py-2 font-medium">{net.ssid}</td>
 								<td class="px-3 py-2">{net.rssi} dBm</td>

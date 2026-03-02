@@ -19,9 +19,9 @@ const BASE_URL: string = import.meta.env.VITE_API_HOST ?? '';
  * @throws      On network errors or non-ok HTTP status codes
  */
 export async function apiFetch<T = unknown>(path: string, init?: RequestInit): Promise<T> {
-	const res = await fetch(`${BASE_URL}${path}`, init);
-	if (!res.ok) {
-		throw new Error(`API ${init?.method ?? 'GET'} ${path} → ${res.status}`);
+	const response = await fetch(`${BASE_URL}${path}`, init);
+	if (!response.ok) {
+		throw new Error(`API ${init?.method ?? 'GET'} ${path} → ${response.status}`);
 	}
-	return res.json() as Promise<T>;
+	return response.json() as Promise<T>;
 }

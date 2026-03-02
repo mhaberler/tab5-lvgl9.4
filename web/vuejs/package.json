@@ -1,33 +1,50 @@
 {
-	"name": "example-vuejs",
-	"version": "0.0.1",
-	"type": "module",
-	"engines": {
-		"node": ">=18.0.0",
-		"npm": ">=10.0.0"
-	},
-	"scripts": {
-		"dev": "vite dev --host",
-		"build": "vite build",
-		"generate": "npx svelteesp32 -e webserver -s dist -o ../../include/svelteesp32webserver.h  --etag=true --gzip=true",
-		"preview": "vite preview",
-		"ts:check": "vue-tsc --noEmit"
-	},
-	"dependencies": {
-		"flowbite-vue": "^0.2.3",
-		"mqtt": "^5.0.0",
-		"vue": "^3.5.0"
-	},
-	"devDependencies": {
-		"@tailwindcss/vite": "^4.2.1",
-		"@vitejs/plugin-vue": "^5.2.0",
-		"@vitejs/plugin-vue-jsx": "^4.1.0",
-		"flowbite": "^3.1.2",
-		"tailwindcss": "^4.2.1",
-		"typescript": "^5.9.3",
-		"vite": "^7.3.1",
-		"svelteesp32": "^2.1.0",
-		"vite-plugin-devtools-json": "^0.1.0",
-		"vue-tsc": "^2.2.0"
-	}
+  "name": "example-vuejs",
+  "version": "0.0.1",
+  "type": "module",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=10.0.0"
+  },
+  "scripts": {
+    "dev": "vite dev --host",
+    "build": "vite build",
+    "generate": "npx svelteesp32 -e webserver -s dist -o ../../include/svelteesp32webserver.h  --etag=true --gzip=true",
+    "preview": "vite preview",
+    "ts:check": "vue-tsc --noEmit",
+    "format:check": "prettier --check .",
+    "format:fix": "prettier --write .",
+    "lint:check": "eslint .",
+    "lint:fix": "eslint --fix .",
+    "all": "npm run format:fix && npm run lint:fix && npm run ts:check && npm run build && npm run generate"
+  },
+  "dependencies": {
+    "flowbite-vue": "^0.2.3",
+    "mqtt": "^5.0.0",
+    "vue": "^3.5.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.4",
+    "@eslint/js": "^10.0.1",
+    "@tailwindcss/vite": "^4.2.1",
+    "@typescript-eslint/eslint-plugin": "^8.56.1",
+    "@typescript-eslint/parser": "^8.56.1",
+    "@vitejs/plugin-vue": "^5.2.0",
+    "@vitejs/plugin-vue-jsx": "^4.1.0",
+    "eslint": "^9.14.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-simple-import-sort": "^12.1.1",
+    "eslint-plugin-unicorn": "^63.0.0",
+    "eslint-plugin-vue": "^9.29.0",
+    "flowbite": "^3.1.2",
+    "globals": "^17.3.0",
+    "prettier": "^3.8.1",
+    "svelteesp32": "^2.1.0",
+    "tailwindcss": "^4.2.1",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1",
+    "vite-plugin-devtools-json": "^0.1.0",
+    "vue-eslint-parser": "^10.4.0",
+    "vue-tsc": "^2.2.0"
+  }
 }
