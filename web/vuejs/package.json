@@ -7,16 +7,15 @@
     "npm": ">=10.0.0"
   },
   "scripts": {
-    "dev": "vite dev --host",
+    "dev": "vite dev",
     "build": "vite build",
-    "generate": "npx svelteesp32 -e webserver -s dist -o ../../include/svelteesp32webserver.h  --etag=true --gzip=true",
     "preview": "vite preview",
     "ts:check": "vue-tsc --noEmit",
     "format:check": "prettier --check .",
     "format:fix": "prettier --write .",
     "lint:check": "eslint .",
     "lint:fix": "eslint --fix .",
-    "all": "npm run format:fix && npm run lint:fix && npm run ts:check && npm run build && npm run generate"
+    "all": "npm run format:fix && npm run lint:fix && npm run ts:check && npm run build"
   },
   "dependencies": {
     "flowbite-vue": "^0.2.3",

@@ -204,6 +204,7 @@ void wifi_setup() {
     WiFi.AP.enableIPv6();
 
     WiFi.STA.begin();
+    WiFi.STA.enableIPv6();
     if (MDNS.begin(hostname)) {
         MDNS.enableWorkstation();
         MDNS.addService("mqtt", "tcp", MQTT_PORT);

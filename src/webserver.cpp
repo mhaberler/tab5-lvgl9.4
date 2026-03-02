@@ -2,12 +2,7 @@
 #include <NetworkClient.h>
 #include <WebServer.h>
 #include <ArduinoJson.h>
-#include "svelteesp32webserver.h"
-
-
-#ifndef SVELTEESP32_FILE_INDEX_HTML
-    #error Missing index file
-#endif
+#include "static_assets.h"
 
 #ifdef USE_ELEGANT_OTA
     #include <ElegantOTA.h>
@@ -63,7 +58,7 @@ static void sendCorsHeaders() {
 
 void http_setup(void) {
 
-    initSvelteStaticFiles(&server);
+    initStaticAssets(&server);
 
     // Handle CORS preflight for all /api/* routes
     server.on("/api/status",  HTTP_OPTIONS, []() { sendCorsHeaders(); server.send(204); });
