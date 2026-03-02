@@ -48,7 +48,7 @@ const webFilesPlugin = {
         "-o",
         path.relative(rootDirectory, temporaryHeaderPath),
         "--define",
-        "STATIC_ASSETS",
+        "VUEJS_STATIC_ASSETS",
         "--espmethod",
         "initStaticAssets",
         "--gzip",

@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@heroicons/vue": "^2.0.18",
+    "@vitejs/plugin-vue-jsx": "^5.1.4",
     "autoprefixer": "^10.4.27",
     "daisyui": "^2.51.6",
     "pinia": "^3.0.4",

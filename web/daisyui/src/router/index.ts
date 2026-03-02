@@ -21,19 +21,19 @@ const router = createRouter({
         {
           path: '',
           name: 'newItemHome',
-          redirect: { name: 'itemInfo' },
+          redirect: { name: 'itemInfo' }
         },
         {
           name: 'itemInfo',
           path: 'info',
-          component: ItemInfo,
+          component: ItemInfo
         },
         {
           name: 'itemProps',
           path: 'props',
-          component: ItemProps,
-        },
-      ],
+          component: ItemProps
+        }
+      ]
     },
     {
       path: '/logout',

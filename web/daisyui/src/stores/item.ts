@@ -2,13 +2,13 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
 export interface Property {
-  name: String,
-  value: String,
+  name: String
+  value: String
   comment: String
 }
 
 export interface Item {
-  name: String,
+  name: String
   props: Property[]
 }
 
