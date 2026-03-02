@@ -1,0 +1,57 @@
+{
+  "name": "starter-template-vite-vue3-sass-tailwind4-daisyui5",
+  "version": "1.1.0",
+  "description": "Vite + Vue 3 + Sass + Tailwind 4 + DaisyUI 5 template",
+  "author": "Martin Ille <ille.martin@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/martinille/starter-template-vite-vue3-sass-tailwind4-daisyui5.git"
+  },
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "vite preview",
+    "ts:check": "vue-tsc --noEmit",
+    "format:check": "prettier --check .",
+    "format:fix": "prettier --write .",
+    "lint:check": "eslint .",
+    "lint:fix": "eslint --fix .",
+    "all": "npm run format:fix && npm run lint:fix && npm run ts:check && npm run build"
+  },
+  "dependencies": {
+    "@eslint/eslintrc": "^3.3.4",
+    "@eslint/js": "^10.0.1",
+    "baseline-browser-mapping": "^2.10.0",
+    "caniuse-lite": "^1.0.30001775",
+    "vite-plugin-devtools-json": "^1.0.0",
+    "vue": "^3.5.29",
+    "vue-router": "^5.0.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.2.1",
+    "@tailwindcss/vite": "^4.2.1",
+    "@types/node": "^25.3.3",
+    "@vitejs/plugin-vue": "^6.0.4",
+    "@vitejs/plugin-vue-jsx": "^5.1.4",
+    "autoprefixer": "^10.4.27",
+    "daisyui": "^5.5.19",
+    "postcss": "^8.5.6",
+    "sass": "^1.97.3",
+    "svelteesp32": "^2.1.0",
+    "tailwindcss": "^4.2.1",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1",
+    "vue-tsc": "^3.2.5",
+    "eslint": "^10.0.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-simple-import-sort": "^12.1.1",
+    "eslint-plugin-unicorn": "^63.0.0",
+    "vue-eslint-parser": "^10.4.0",
+    "prettier": "^3.8.1",
+    "@typescript-eslint/eslint-plugin": "^8.56.1",
+    "@typescript-eslint/parser": "^8.56.1",
+    "eslint-plugin-vue": "^10.8.0"
+  }
+}

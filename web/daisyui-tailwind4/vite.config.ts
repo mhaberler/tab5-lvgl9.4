@@ -1,0 +1,98 @@
+import { fileURLToPath, URL } from "node:url";
+import { execSync } from "node:child_process";
+import crypto from "node:crypto";
+import fs from "node:fs";
+import path from "node:path";
+import tailwindcss from "@tailwindcss/vite";
+import vue from "@vitejs/plugin-vue";
+import vueJsx from "@vitejs/plugin-vue-jsx";
+import { defineConfig } from "vite";
+import devtoolsJson from "vite-plugin-devtools-json";
+
+const __dirname = import.meta.dirname;
+const rootDirectory = __dirname;
+const distributionDirectory = path.resolve(rootDirectory, "dist");
+const headerPath = path.resolve(rootDirectory, "../../include/static_assets.h");
+
+function getFileHash(filePath: string): string | undefined {
+	if (!fs.existsSync(filePath)) return undefined;
+	const content = fs.readFileSync(filePath);
+	return crypto.createHash("md5").update(content).digest("hex");
+}
+function runCommand(command: string, arguments_: string[], cwd: string) {
+	try {
+		execSync(`${command} ${arguments_.join(" ")}`, { cwd, stdio: "inherit" });
+	} catch {
+		// Error already printed to console via stdio: "inherit"
+	}
+}
+const webFilesPlugin = {
+	name: "web-files-plugin",
+	async closeBundle() {
+		const temporaryHeaderPath = path.resolve(
+			rootDirectory,
+			`../../include/.${path.basename(headerPath)}.tmp`,
+		);
+		const oldHash = getFileHash(headerPath);
+
+		runCommand(
+			"npx",
+			[
+				"svelteesp32",
+				"-e",
+				"webserver",
+				"-s",
+				path.relative(rootDirectory, distributionDirectory),
+				"-o",
+				path.relative(rootDirectory, temporaryHeaderPath),
+				"--define",
+				"VUEJS_STATIC_ASSETS",
+				"--espmethod",
+				"initStaticAssets",
+				"--gzip",
+				"true",
+				"--cachetime",
+				"86400",
+			],
+			rootDirectory,
+		);
+
+		const generatedHash = getFileHash(temporaryHeaderPath);
+
+		if (oldHash === generatedHash && fs.existsSync(headerPath)) {
+			// Content unchanged - remove temp file and skip
+			fs.unlinkSync(temporaryHeaderPath);
+			// eslint-disable-next-line no-console
+			console.log("ℹ static_assets.h unchanged, skipping write");
+		} else {
+			// Content changed - replace original with temp file
+			fs.renameSync(temporaryHeaderPath, headerPath);
+			// eslint-disable-next-line no-console
+			console.log("✓ static_assets.h updated");
+		}
+	},
+};
+// https://vite.dev/config/
+export default defineConfig(({ mode }) => ({
+	base: process.env.BASE_URL,
+	plugins: [vue(), vueJsx(), tailwindcss(), devtoolsJson(), webFilesPlugin],
+	build: {
+		target: "esnext",
+		sourcemap: false,
+		minify: true,
+		cssMinify: true,
+		copyPublicDir: true,
+		emptyOutDir: true,
+		outDir: "dist",
+		chunkSizeWarningLimit: 1500,
+		assetsInlineLimit: 0,
+	},
+	css: {
+		devSourcemap: mode === "development",
+	},
+	resolve: {
+		alias: {
+			"@": fileURLToPath(new URL("src", import.meta.url)),
+		},
+	},
+}));
