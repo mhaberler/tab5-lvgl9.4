@@ -24,7 +24,8 @@ WiFiMulti wifiMulti;
 
 void http_setup();
 void http_loop();
-
+void websocket_setup();
+void websocket_loop();
 // callback used to check Internet connectivity
 // bool testConnection() {
 //     HTTPClient http;
@@ -267,6 +268,7 @@ void wifi_setup() {
     // wifiMulti.setConnectionTestCallbackFunc(testConnection);  // Attempts to connect to a remote webserver in case of captive portals.
     log_i("connecting to WiFi");
     http_setup();
+    websocket_setup();
 }
 
 void wifi_loop() {
@@ -342,4 +344,5 @@ void wifi_loop() {
 
 
     http_loop();
+    websocket_loop();
 }

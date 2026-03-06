@@ -1,43 +1,73 @@
 #include <Arduino.h>
 #include <WiFiServer.h>
 #include <PicoWebsocket.h>
+#include <list>
 
 ::WiFiServer websocket_http_server(8080);
 PicoWebsocket::Server<::WiFiServer> teleplot_websocket_server(websocket_http_server);
 
-Client *websocket;
+std::list<PicoWebsocket::Server<::WiFiServer>::Client> websocket_clients;
+
+static constexpr size_t MAX_WEBSOCKET_CLIENTS = 10;
 
 size_t websocketWriteCallback(const uint8_t* buf, size_t len) {
-    Serial.printf("[Teleplot] Writing %zu bytes: ", len);
-    Serial.write(buf, len);
-    Serial.println();
+    // Broadcast to all connected WebSocket clients
+    size_t broadcast_count = 0;
+    for (auto &websocket : websocket_clients) {
+        if (websocket.connected()) {
+            websocket.write(buf, len);
+            broadcast_count++;
+        }
+    }
+
+    if (broadcast_count > 0) {
+        Serial.printf("[Teleplot] Broadcast %zu bytes to %zu WebSocket client(s)\n", len, broadcast_count);
+    }
+
     return len;
-    // websocket.write(buffer, bytes_read);
-
 }
-
 
 void websocket_setup() {
     teleplot_websocket_server.begin();
+    Serial.println("[WebSocket] Server started on port 8080");
 }
 
 void websocket_loop() {
-    // websocket = teleplot_websocket_server.accept();
-    // if (!websocket) {
-    //     return;
-    // }
+    // Accept new clients (non-blocking)
+    if (websocket_clients.size() < MAX_WEBSOCKET_CLIENTS) {
+        auto websocket = teleplot_websocket_server.accept();
+        if (websocket.connected()) {
+            websocket_clients.push_back(websocket);
+            Serial.printf("[WebSocket] Client connected. Total clients: %zu\n", websocket_clients.size());
+        }
+    }
 
-    // while (websocket.connected()) {
-    //     yield();
+    yield();
 
-    //     if (websocket.available()) {
-    //         uint8_t buffer[128];
-    //         const auto bytes_read = websocket.read(buffer, 128);
-    //         Serial.printf("[Teleplot] Writing %zu bytes: ", bytes_read);
-    //         Serial.write(buffer, bytes_read);
-    //         Serial.println();
+    // Process existing clients (iterate and remove disconnected)
+    for (auto it = websocket_clients.begin(); it != websocket_clients.end(); ) {
+        auto &websocket = *it;
 
-    //     }
-    // }
+        // Remove disconnected clients
+        if (!websocket.connected()) {
+            it = websocket_clients.erase(it);
+            Serial.printf("[WebSocket] Client disconnected. Total clients: %zu\n", websocket_clients.size());
+            continue;
+        }
 
+        // Process incoming data
+        if (websocket.available()) {
+            uint8_t buffer[256];
+            const auto bytes_read = websocket.read(buffer, 256);
+            if (bytes_read > 0) {
+                Serial.printf("[WebSocket] Received %zu bytes: ", bytes_read);
+                Serial.write(buffer, bytes_read);
+                Serial.println();
+            }
+        }
+
+        ++it;
+    }
+
+    yield();
 }
