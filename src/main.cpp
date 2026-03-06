@@ -41,6 +41,13 @@ void wifi_loop();
 void http_setup(void);
 void http_loop(void);
 
+size_t teleplotWriteCallback(const uint8_t* buf, size_t len) {
+    Serial.printf("[Teleplot] Writing %zu bytes: ", len);
+    Serial.write(buf, len);
+    Serial.println();
+    return len;
+}
+
 void setup() {
     Serial.begin(115200);
     delay(3000);
@@ -71,13 +78,7 @@ void setup() {
 #ifdef USE_BLESCANNER
     bleScanner.begin(4096, 15000, 100, 99, 4096, 1, RBMEM);
 #endif
-    teleplot.begin([](const uint8_t* buf, size_t len) -> size_t {
-        Serial.printf("[Teleplot] Writing %zu bytes: ", len);
-        Serial.write(buf, len);
-        Serial.println();
-        return len;
-    });
-
+    teleplot.begin(teleplotWriteCallback);
 }
 
 void loop() {
