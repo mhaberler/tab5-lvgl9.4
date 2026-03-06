@@ -76,16 +76,26 @@ void startWiFiScan() {
 
 static const char* authStr(wifi_auth_mode_t mode) {
     switch (mode) {
-        case WIFI_AUTH_OPEN:            return "open";
-        case WIFI_AUTH_WEP:             return "WEP";
-        case WIFI_AUTH_WPA_PSK:         return "WPA";
-        case WIFI_AUTH_WPA2_PSK:        return "WPA2";
-        case WIFI_AUTH_WPA_WPA2_PSK:    return "WPA+WPA2";
-        case WIFI_AUTH_WPA2_ENTERPRISE: return "WPA2-EAP";
-        case WIFI_AUTH_WPA3_PSK:        return "WPA3";
-        case WIFI_AUTH_WPA2_WPA3_PSK:   return "WPA2+WPA3";
-        case WIFI_AUTH_WAPI_PSK:        return "WAPI";
-        default:                        return "unknown";
+        case WIFI_AUTH_OPEN:
+            return "open";
+        case WIFI_AUTH_WEP:
+            return "WEP";
+        case WIFI_AUTH_WPA_PSK:
+            return "WPA";
+        case WIFI_AUTH_WPA2_PSK:
+            return "WPA2";
+        case WIFI_AUTH_WPA_WPA2_PSK:
+            return "WPA+WPA2";
+        case WIFI_AUTH_WPA2_ENTERPRISE:
+            return "WPA2-EAP";
+        case WIFI_AUTH_WPA3_PSK:
+            return "WPA3";
+        case WIFI_AUTH_WPA2_WPA3_PSK:
+            return "WPA2+WPA3";
+        case WIFI_AUTH_WAPI_PSK:
+            return "WAPI";
+        default:
+            return "unknown";
     }
 }
 
@@ -103,7 +113,10 @@ void publishScannedNetworks(uint16_t networksFound) {
         net["connected"] = (wifi_status == WL_CONNECTED) && (WiFi.SSID(i) == WiFi.STA.SSID());
         bool known = false;
         for (JsonObject cred : wifiCredentials.as<JsonArray>()) {
-            if (WiFi.SSID(i) == cred["ssid"].as<const char*>()) { known = true; break; }
+            if (WiFi.SSID(i) == cred["ssid"].as<const char*>()) {
+                known = true;
+                break;
+            }
         }
         net["known"] = known;
     }
@@ -127,22 +140,46 @@ static void loadWifiCredentials() {
         JsonDocument seed;
         JsonArray arr = seed.to<JsonArray>();
 #ifdef SSID1
-        { JsonObject o = arr.add<JsonObject>(); o["ssid"] = SSID1; o["pw"] = PW1; }
+        {
+            JsonObject o = arr.add<JsonObject>();
+            o["ssid"] = SSID1;
+            o["pw"] = PW1;
+        }
 #endif
 #ifdef SSID2
-        { JsonObject o = arr.add<JsonObject>(); o["ssid"] = SSID2; o["pw"] = PW2; }
+        {
+            JsonObject o = arr.add<JsonObject>();
+            o["ssid"] = SSID2;
+            o["pw"] = PW2;
+        }
 #endif
 #ifdef SSID3
-        { JsonObject o = arr.add<JsonObject>(); o["ssid"] = SSID3; o["pw"] = PW3; }
+        {
+            JsonObject o = arr.add<JsonObject>();
+            o["ssid"] = SSID3;
+            o["pw"] = PW3;
+        }
 #endif
 #ifdef SSID4
-        { JsonObject o = arr.add<JsonObject>(); o["ssid"] = SSID4; o["pw"] = PW4; }
+        {
+            JsonObject o = arr.add<JsonObject>();
+            o["ssid"] = SSID4;
+            o["pw"] = PW4;
+        }
 #endif
 #ifdef SSID5
-        { JsonObject o = arr.add<JsonObject>(); o["ssid"] = SSID5; o["pw"] = PW5; }
+        {
+            JsonObject o = arr.add<JsonObject>();
+            o["ssid"] = SSID5;
+            o["pw"] = PW5;
+        }
 #endif
 #ifdef SSID6
-        { JsonObject o = arr.add<JsonObject>(); o["ssid"] = SSID6; o["pw"] = PW6; }
+        {
+            JsonObject o = arr.add<JsonObject>();
+            o["ssid"] = SSID6;
+            o["pw"] = PW6;
+        }
 #endif
         serializeJson(seed, json);
         prefs.putString("creds", json);
@@ -200,11 +237,13 @@ void wifi_setup() {
     String apPASS = "ESP32-" + macAddress;
     log_i("AP SSID: %s PW: %s", apSSID.c_str(), apPASS.c_str());
     WiFi.AP.create(apSSID, apPASS);          // AP mode
-    WiFi.AP.enableDhcpCaptivePortal();
     WiFi.AP.enableIPv6();
+    WiFi.AP.begin();
+    WiFi.AP.enableDhcpCaptivePortal();
 
     WiFi.STA.begin();
     WiFi.STA.enableIPv6();
+
     if (MDNS.begin(hostname)) {
         MDNS.enableWorkstation();
         MDNS.addService("mqtt", "tcp", MQTT_PORT);
