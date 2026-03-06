@@ -10,6 +10,12 @@
 #include <SD_MMC.h>
 #include "BLEScanner.h"
 
+#ifdef EMBEDDED_TELEPLOT
+    #include "Teleplot.h"
+    Teleplot teleplot;
+    float i;
+#endif
+
 #ifdef LVGL_UI
     #include <lvgl.h>
     #include "display_driver.h"
@@ -65,9 +71,13 @@ void setup() {
 #ifdef USE_BLESCANNER
     bleScanner.begin(4096, 15000, 100, 99, 4096, 1, RBMEM);
 #endif
+    teleplot.begin(&Serial);
+
 }
 
 void loop() {
+    unsigned long now = millis();
+
     http_loop();
 #if defined(M5UNIFIED)
     M5.update();
@@ -96,7 +106,6 @@ void loop() {
         } {
             static BLEScanner::Stats lastStats = {};
             static unsigned long lastPublishTime = 0;
-            unsigned long now = millis();
 
             if (now - lastPublishTime >= 10000) {
                 auto st = bleScanner.stats();
@@ -120,6 +129,13 @@ void loop() {
             }
         }
 #endif
+
+        static unsigned long lastTpTime = 0;
+        if (now - lastTpTime >= 200) {
+            teleplot.update("sin", sin(i), "");
+            teleplot.update("cos", cos(i), "");
+            i += 0.1;
+        }
         mqtt.loop();
     }
     wifi_loop();
