@@ -71,7 +71,12 @@ void setup() {
 #ifdef USE_BLESCANNER
     bleScanner.begin(4096, 15000, 100, 99, 4096, 1, RBMEM);
 #endif
-    teleplot.begin(&Serial);
+    teleplot.begin([](const uint8_t* buf, size_t len) -> size_t {
+        Serial.printf("[Teleplot] Writing %zu bytes: ", len);
+        Serial.write(buf, len);
+        Serial.println();
+        return len;
+    });
 
 }
 

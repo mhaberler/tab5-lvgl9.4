@@ -23,6 +23,7 @@
 // #include <fmt/core.h>
 // #include <fmt/format.h>
 #include "fmt.h"
+#include <functional>
 
 #include <map>
 
@@ -216,6 +217,8 @@ private:
 
 class Teleplot {
 public:
+  using WriteCallback = std::function<size_t(const uint8_t*, size_t)>;
+
   Teleplot() { enabled_ = false; };
 #ifdef ARDUINO
   void begin(IPAddress address, uint16_t port = 47269,
@@ -261,6 +264,15 @@ public:
     section_ = "\xA7";
   };
 #endif
+
+  void begin(WriteCallback callback, int64_t millis_offset = 0, bool enabled = true) {
+    enabled_ = enabled;
+    millis_offset_ = millis_offset;
+    writeCallback_ = callback;
+    prefix_ = ">";
+    suffix_ = "\n";
+    section_ = "\xA7";
+  }
 
   ~Teleplot() = default;
 
@@ -390,6 +402,10 @@ private:
   void emit(std::string const &data) {
     if (!enabled_)
       return;
+    if (writeCallback_) {
+      writeCallback_((const uint8_t *)data.c_str(), data.size());
+      return;
+    }
 #ifdef EMBEDDED_TELEPLOT
     if (stream_) {
       stream_->write(data.c_str(), data.size());
@@ -461,6 +477,7 @@ private:
   bool enabled_;
   int sockfd_ = -1;
   int32_t port_ = -1;
+  WriteCallback writeCallback_ = nullptr;
 #ifdef EMBEDDED_TELEPLOT
   Stream *stream_ = NULL;
   IPAddress address_;
