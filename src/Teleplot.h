@@ -4,21 +4,23 @@
 #ifndef TELEPLOT_H
 #define TELEPLOT_H
 
+// Platform-specific headers must come first for type declarations
 #ifdef EMBEDDED_TELEPLOT
 #include <Arduino.h>
 #include <IPAddress.h>
-#include <WiFiUdp.h>
- WiFiUDP udp;
-#else
-#include <arpa/inet.h>
-#include <sys/socket.h>
+#endif
+
+#ifndef EMBEDDED_TELEPLOT
+#include <string>
 #endif
 
 #include <chrono>
 #include "fmt.h"
 #include <functional>
 #include <map>
-#include <unistd.h>
+#include <memory>
+#include <cstdint>
+#include "Teleplot_backend.h"
 
 // Enable/Disable implementation optimisations:
 #define TELEPLOT_USE_BUFFERING // Allows to group updates sent, but will use dynamic buffer map
@@ -216,73 +218,37 @@ class Teleplot {
 public:
   using WriteCallback = std::function<size_t(const uint8_t*, size_t)>;
 
-  Teleplot() : enabled_(false) {}
-#ifdef ARDUINO
-  void begin(IPAddress address, uint16_t port = 47269,
-             int64_t millis_offset = 0, bool enabled = true) {
-    address_ = address;
-    port_ = port;
-    enabled_ = enabled;
-    millis_offset_ = millis_offset;
-    prefix_ = "";
-    suffix_ = "";
-    section_ = "§";
-  }
-#else
-  void begin(std::string address, unsigned int port = 47269,
-             bool enabled = true) {
-    address_ = address;
-    port_ = port;
-    enabled_ = enabled;
-    // Create UDP socket
-    sockfd_ = socket(AF_INET, SOCK_DGRAM, 0);
-    serv_.sin_family = AF_INET;
-    serv_.sin_port = htons(port);
-    serv_.sin_addr.s_addr = inet_addr(address_.c_str());
-  }
+  Teleplot();
+  ~Teleplot();
 
-  void begin(int fd = 1, bool enabled = true) {
-    fd_ = fd;
-    enabled_ = enabled;
-    port_ = -1;
-    prefix_ = ">";
-    suffix_ = "\n";
-    section_ = "\xA7";
-  };
-#endif
+  // Platform-specific initialization methods
 
 #ifdef EMBEDDED_TELEPLOT
-  void begin(Stream *stream, int64_t millis_offset = 0, bool enabled = true) {
-    enabled_ = enabled;
-    millis_offset_ = millis_offset;
-    stream_ = stream;
-    prefix_ = ">";
-    suffix_ = "\n";
-    section_ = "\xA7";
-  };
+  // Arduino backend with UDP
+  void begin(IPAddress address, uint16_t port = 47269,
+             int64_t millis_offset = 0, bool enabled = true);
+
+  // Arduino backend with Stream (Serial, etc.)
+  void begin(Stream* stream, int64_t millis_offset = 0, bool enabled = true);
 #endif
 
-  void begin(WriteCallback callback, int64_t millis_offset = 0, bool enabled = true) {
-    enabled_ = enabled;
-    millis_offset_ = millis_offset;
-    writeCallback_ = callback;
-    prefix_ = ">";
-    suffix_ = "\n";
-    section_ = "\xA7";
-  }
-
-  ~Teleplot() = default;
-
 #ifndef EMBEDDED_TELEPLOT
-  // Static localhost instance
-  // makes no sense on embedded
-  static Teleplot &localhost() {
-    static Teleplot teleplot;
+  // Unix backend with UDP socket
+  void begin(const std::string& address, unsigned int port = 47269, bool enabled = true);
 
+  // Unix backend with file descriptor
+  void begin(int fd, bool enabled = true);
+
+  // Static localhost instance for desktop debugging
+  static Teleplot& localhost() {
+    static Teleplot teleplot;
     teleplot.begin("127.0.0.1");
     return teleplot;
   }
 #endif
+
+  // Platform-agnostic callback backend (works everywhere)
+  void begin(WriteCallback callback, int64_t millis_offset = 0, bool enabled = true);
   template <typename T>
   void update(const std::string& key, const T& value, std::string unit = "",
               std::string flags = TELEPLOT_FLAG_DEFAULT) {
@@ -338,19 +304,9 @@ public:
     updateData(mshape.getName(), timeStamp, NULL, NULL, flags, "", mshape);
   }
 
-  void log(const std::string& log) {
-    int64_t nowMs = std::chrono::time_point_cast<std::chrono::milliseconds>(
-                        std::chrono::system_clock::now())
-                        .time_since_epoch()
-                        .count();
-    emit(">" + std::to_string(nowMs) + ":" + log + suffix_);
-  }
+  void log(const std::string& log);
 
-  void log_ms(const std::string& log, unsigned long nowMs) {
-    int64_t timeStamp = nowMs + millis_offset_;
-    // emit(prefix_ + std::to_string(timeStamp) + ":" + log + suffix_);
-    emit(">" + std::to_string(timeStamp) + ":" + log + suffix_);
-  }
+  void log_ms(const std::string& log, unsigned long nowMs);
 
 private:
   template <typename T1, typename T2, typename T3>
@@ -389,39 +345,9 @@ private:
 
   std::string formatPacket(const std::string& key, const std::string& values,
                            const std::string& flags, std::string unit,
-                           bool is3D = false) {
-    std::string unitFormatted = (unit == "") ? "" : section_ + unit;
-    return fmt::format("{}{}{}:{}{}|{}{}", prefix_, is3D ? "3D|" : "", key, values,
-                  unitFormatted, flags, suffix_);
-  }
+                           bool is3D = false);
 
-  void emit(const std::string& data) {
-    if (!enabled_)
-      return;
-    if (writeCallback_) {
-      writeCallback_((const uint8_t *)data.c_str(), data.size());
-      return;
-    }
-#ifdef EMBEDDED_TELEPLOT
-    if (stream_) {
-      stream_->write(data.c_str(), data.size());
-      return;
-    }
-    if (port_ > -1) {
-      udp.beginPacket(address_, port_);
-      udp.write((const uint8_t *)data.c_str(), data.size());
-      udp.flush();
-      udp.endPacket();
-    }
-#else
-    if (port_ > -1) {
-      (void)sendto(sockfd_, data.c_str(), data.size(), 0,
-                   (struct sockaddr *)&serv_, sizeof(serv_));
-    } else {
-      (void)write(fd_, data.c_str(), data.size());
-    }
-#endif
-  }
+  void emit(const std::string& data);
 
 #ifdef TELEPLOT_USE_BUFFERING
   void buffer(const std::string& key, const std::string& values,
@@ -470,26 +396,9 @@ private:
   std::map<std::string, int64_t> updateTimestampsUs_;
 #endif
 
-  bool enabled_;
-  int sockfd_ = -1;
-  int32_t port_ = -1;
-  WriteCallback writeCallback_ = nullptr;
-#ifdef EMBEDDED_TELEPLOT
-  Stream *stream_ = NULL;
-  IPAddress address_;
-#else
-  std::string address_;
-  sockaddr_in serv_;
-  bool use_fd_;
-  int fd_;
-
-#endif
+  // Backend instance
+  std::unique_ptr<TeleplotBackend> backend_;
   int64_t millis_offset_ = 0;
-
-  std::string prefix_;
-  std::string suffix_;
-  std::string section_;
-
   int64_t lastBufferingFlushTimestampUs_ = 0;
 };
 
