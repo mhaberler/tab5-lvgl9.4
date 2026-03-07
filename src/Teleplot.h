@@ -1,6 +1,5 @@
 // Teleplot
 // Source: https://github.com/nesnes/teleplot
-// #define TELEPLOT_DISABLE
 
 #ifndef TELEPLOT_H
 #define TELEPLOT_H
@@ -8,11 +7,7 @@
 #ifdef EMBEDDED_TELEPLOT
 #include <Arduino.h>
 #include <IPAddress.h>
-// #include <StreamLib.h>
 #include <WiFiUdp.h>
-
-// workaround https://github.com/fmtlib/fmt/pull/2440
-// #undef B1
  WiFiUDP udp;
 #else
 #include <arpa/inet.h>
@@ -20,39 +15,45 @@
 #endif
 
 #include <chrono>
-// #include <fmt/core.h>
-// #include <fmt/format.h>
 #include "fmt.h"
 #include <functional>
-
 #include <map>
-
 #include <unistd.h>
 
 // Enable/Disable implementation optimisations:
+#define TELEPLOT_USE_BUFFERING // Allows to group updates sent, but will use dynamic buffer map
 
-#define TELEPLOT_USE_BUFFERING // Allows to group updates sent, but will use
-// a dynamic buffer map
-
+// Default flags
 #define TELEPLOT_FLAG_DEFAULT ""
 #define TELEPLOT_FLAG_NOPLOT "np"
 #define TELEPLOT_FLAG_2D "xy"
 #define TELEPLOT_FLAG_TEXT "text"
 
+// Packet format constants
+const char PACKET_SHAPE_TYPE = 'S';
+const char PACKET_COLOR = 'C';
+const char PACKET_POSITION = 'P';
+const char PACKET_QUATERNION = 'Q';
+const char PACKET_ROTATION = 'R';
+const char PACKET_RADIUS = 'A';
+const char PACKET_HEIGHT = 'H';
+const char PACKET_WIDTH = 'W';
+const char PACKET_DEPTH = 'D';
+const unsigned short ROUNDING_PRECISION = 3;
+
 class ShapeTeleplot {
 public:
   class ShapeValue {
   public:
-    ShapeValue() : isSet(false), value(0){};
-    ShapeValue(double val) : isSet(true), value(val){};
+    ShapeValue() : is_set_(false), value_(0){}
+    ShapeValue(double val) : is_set_(true), value_(val){}
 
-    bool isSet;
-    double value;
-    std::string valueRounded() const { return roundValue(value, 3); }
+    bool is_set_;
+    double value_;
+    std::string valueRounded() const { return roundValue(value_, ROUNDING_PRECISION); }
 
   private:
-    std::string roundValue(const double value,
-                           const unsigned short precision) const {
+    std::string roundValue(double value, unsigned short precision) const {
       std::string value_str = std::to_string(value);
       int res_length = value_str.length();
 
@@ -62,7 +63,7 @@ public:
       while (i < res_length && !stop) {
         if (value_str[i] == '.') {
           int u = i + precision;
-          if (u + 1 < value_str.length()) {
+          if (u + 1 < static_cast<int>(value_str.length())) {
             while (value_str[u] == '0')
               u--;
 
@@ -80,146 +81,142 @@ public:
     }
   };
 
-  ShapeTeleplot(){};
+  ShapeTeleplot() = default;
 
-  ShapeTeleplot(std::string const &name, std::string const &type,
-                std::string const &color = "")
-      : _name(name), _type(type), _color(color){};
+  ShapeTeleplot(const std::string& name, const std::string& type,
+                const std::string& color = "")
+      : name_(name), type_(type), color_(color) {}
 
-  std::string const &getName() const { return _name; }
+  const std::string& getName() const { return name_; }
 
-  ShapeTeleplot &setPos(ShapeValue const posX, ShapeValue const posY = {},
-                        ShapeValue const posZ = {}) {
-    _posX = posX;
-    _posY = posY;
-    _posZ = posZ;
-
+  ShapeTeleplot& setPos(const ShapeValue& posX, const ShapeValue& posY = {},
+                        const ShapeValue& posZ = {}) {
+    pos_x_ = posX;
+    pos_y_ = posY;
+    pos_z_ = posZ;
     return *this;
   }
 
-  ShapeTeleplot &setRot(ShapeValue const rotX, ShapeValue const rotY = {},
-                        ShapeValue const rotZ = {},
-                        ShapeValue const rotW = {}) {
-    _rotX = rotX;
-    _rotY = rotY;
-    _rotZ = rotZ;
-    _rotW = rotW;
-
+  ShapeTeleplot& setRot(const ShapeValue& rotX, const ShapeValue& rotY = {},
+                        const ShapeValue& rotZ = {},
+                        const ShapeValue& rotW = {}) {
+    rot_x_ = rotX;
+    rot_y_ = rotY;
+    rot_z_ = rotZ;
+    rot_w_ = rotW;
     return *this;
   }
 
-  ShapeTeleplot &setCubeProperties(ShapeValue const height,
-                                   ShapeValue const width = {},
-                                   ShapeValue const depth = {}) {
-    _height = height;
-    _width = width;
-    _depth = depth;
-
+  ShapeTeleplot& setCubeProperties(const ShapeValue& height,
+                                   const ShapeValue& width = {},
+                                   const ShapeValue& depth = {}) {
+    height_ = height;
+    width_ = width;
+    depth_ = depth;
     return *this;
   }
 
-  ShapeTeleplot &setSphereProperties(ShapeValue const radius,
-                                     ShapeValue const precision) {
-    _radius = radius;
-    _precision = precision;
-
+  ShapeTeleplot& setSphereProperties(const ShapeValue& radius,
+                                     const ShapeValue& precision) {
+    radius_ = radius;
+    precision_ = precision;
     return *this;
   }
 
   std::string toString() const {
     std::string result;
 
-    result.append(fmt::format("S:{}", _type));
-    if (_color != "") {
-      result.append(fmt::format(":C:{}", _color));
+    result.append(fmt::format("S:{}", type_));
+    if (color_ != "") {
+      result.append(fmt::format(":C:{}", color_));
     }
 
-    if (_posX.isSet || _posY.isSet || _posZ.isSet) {
+    if (pos_x_.is_set_ || pos_y_.is_set_ || pos_z_.is_set_) {
       result.append(fmt::format(":P:"));
-      if (_posX.isSet) {
-        result.append(fmt::format("{}", _posX.valueRounded()));
+      if (pos_x_.is_set_) {
+        result.append(fmt::format("{}", pos_x_.valueRounded()));
       }
       result.append(fmt::format(":"));
 
-      if (_posY.isSet) {
-        result.append(fmt::format("{}", _posY.valueRounded()));
+      if (pos_y_.is_set_) {
+        result.append(fmt::format("{}", pos_y_.valueRounded()));
       }
       result.append(fmt::format(":"));
-      if (_posZ.isSet) {
-        result.append(fmt::format("{}", _posZ.valueRounded()));
+      if (pos_z_.is_set_) {
+        result.append(fmt::format("{}", pos_z_.valueRounded()));
       }
     }
 
-    if (_rotX.isSet || _rotY.isSet || _rotZ.isSet || _rotW.isSet) {
-      result.append(fmt::format("{}", _rotW.isSet ? ":Q:" : ":R:"));
+    if (rot_x_.is_set_ || rot_y_.is_set_ || rot_z_.is_set_ || rot_w_.is_set_) {
+      result.append(fmt::format("{}", rot_w_.is_set_ ? ":Q:" : ":R:"));
 
-      if (_rotX.isSet) {
-        result.append(fmt::format("{}", _rotX.valueRounded()));
+      if (rot_x_.is_set_) {
+        result.append(fmt::format("{}", rot_x_.valueRounded()));
       }
       result.append(fmt::format(":"));
-      if (_rotY.isSet) {
-        result.append(fmt::format("{}", _rotY.valueRounded()));
+      if (rot_y_.is_set_) {
+        result.append(fmt::format("{}", rot_y_.valueRounded()));
       }
       result.append(fmt::format(":"));
-      if (_rotZ.isSet) {
-        result.append(fmt::format("{}", _rotZ.valueRounded()));
+      if (rot_z_.is_set_) {
+        result.append(fmt::format("{}", rot_z_.valueRounded()));
       }
       result.append(fmt::format(":"));
-      if (_rotW.isSet) {
-        result.append(fmt::format("{}", _rotW.valueRounded()));
+      if (rot_w_.is_set_) {
+        result.append(fmt::format("{}", rot_w_.valueRounded()));
       }
     }
 
-    if (_type == "sphere") {
-      if (_radius.isSet) {
-        result.append(fmt::format(":RA:{}", _radius.valueRounded()));
+    if (type_ == "sphere") {
+      if (radius_.is_set_) {
+        result.append(fmt::format(":RA:{}", radius_.valueRounded()));
       }
-      if (_precision.isSet) {
-        result.append(fmt::format(":P:{}", _precision.valueRounded()));
+      if (precision_.is_set_) {
+        result.append(fmt::format(":P:{}", precision_.valueRounded()));
       }
     }
 
-    if (_type == "cube") {
-      if (_height.isSet) {
-        result.append(fmt::format(":H:{}", _height.valueRounded()));
+    if (type_ == "cube") {
+      if (height_.is_set_) {
+        result.append(fmt::format(":H:{}", height_.valueRounded()));
       }
-      if (_width.isSet) {
-        result.append(fmt::format(":W:{}", _width.valueRounded()));
+      if (width_.is_set_) {
+        result.append(fmt::format(":W:{}", width_.valueRounded()));
       }
-      if (_depth.isSet) {
-        result.append(fmt::format(":D:{}", _depth.valueRounded()));
+      if (depth_.is_set_) {
+        result.append(fmt::format(":D:{}", depth_.valueRounded()));
       }
     }
     return result;
   }
 
 private:
-  const std::string _name;
-  const std::string _type;
-  const std::string _color;
+  const std::string name_;
+  const std::string type_;
+  const std::string color_;
 
-  ShapeValue _posX;
-  ShapeValue _posY;
-  ShapeValue _posZ;
+  ShapeValue pos_x_;
+  ShapeValue pos_y_;
+  ShapeValue pos_z_;
 
-  ShapeValue _rotX;
-  ShapeValue _rotY;
-  ShapeValue _rotZ;
-  ShapeValue _rotW;
+  ShapeValue rot_x_;
+  ShapeValue rot_y_;
+  ShapeValue rot_z_;
+  ShapeValue rot_w_;
 
-  ShapeValue _height;
-  ShapeValue _width;
-  ShapeValue _depth;
+  ShapeValue height_;
+  ShapeValue width_;
+  ShapeValue depth_;
 
-  ShapeValue _radius;
-  ShapeValue _precision;
+  ShapeValue radius_;
+  ShapeValue precision_;
 };
 
 class Teleplot {
 public:
   using WriteCallback = std::function<size_t(const uint8_t*, size_t)>;
 
-  Teleplot() { enabled_ = false; };
+  Teleplot() : enabled_(false) {}
 #ifdef ARDUINO
   void begin(IPAddress address, uint16_t port = 47269,
              int64_t millis_offset = 0, bool enabled = true) {
@@ -242,7 +239,7 @@ public:
     serv_.sin_family = AF_INET;
     serv_.sin_port = htons(port);
     serv_.sin_addr.s_addr = inet_addr(address_.c_str());
-  };
+  }
 
   void begin(int fd = 1, bool enabled = true) {
     fd_ = fd;
@@ -287,7 +284,7 @@ public:
   }
 #endif
   template <typename T>
-  void update(std::string const &key, T const &value, std::string unit = "",
+  void update(const std::string& key, const T& value, std::string unit = "",
               std::string flags = TELEPLOT_FLAG_DEFAULT) {
     int64_t nowUs = std::chrono::time_point_cast<std::chrono::microseconds>(
                         std::chrono::system_clock::now())
@@ -298,7 +295,7 @@ public:
   }
 
   template <typename T>
-  void update_ms(std::string const &key, unsigned long nowMs, T const &value,
+  void update_ms(const std::string& key, unsigned long nowMs, const T& value,
                  std::string unit = "",
                  std::string flags = TELEPLOT_FLAG_DEFAULT) {
     int64_t timeStamp = nowMs + millis_offset_;
@@ -306,7 +303,7 @@ public:
   }
 
   template <typename T1, typename T2>
-  void update2D(std::string const &key, T1 const &valueX, T2 const &valueY,
+  void update2D(const std::string& key, const T1& valueX, const T2& valueY,
                 std::string flags = TELEPLOT_FLAG_2D) {
     int64_t nowUs = std::chrono::time_point_cast<std::chrono::microseconds>(
                         std::chrono::system_clock::now())
@@ -317,14 +314,14 @@ public:
   }
 
   template <typename T1, typename T2>
-  void update2D_ms(std::string const &key, unsigned long nowMs,
-                   T1 const &valueX, T2 const &valueY,
+  void update2D_ms(const std::string& key, unsigned long nowMs,
+                   const T1& valueX, const T2& valueY,
                    std::string flags = TELEPLOT_FLAG_2D) {
     int64_t timeStamp = nowMs + millis_offset_;
     updateData(key, valueX, valueY, timeStamp, flags);
   }
 
-  void update3D(ShapeTeleplot const &mshape,
+  void update3D(const ShapeTeleplot& mshape,
                 std::string flags = TELEPLOT_FLAG_DEFAULT) {
 
     int64_t nowUs = std::chrono::time_point_cast<std::chrono::microseconds>(
@@ -335,13 +332,13 @@ public:
     updateData(mshape.getName(), nowMs, NULL, NULL, flags, "", mshape);
   }
 
-  void update3D_ms(ShapeTeleplot const &mshape, unsigned long nowMs,
+  void update3D_ms(const ShapeTeleplot& mshape, unsigned long nowMs,
                    std::string flags = TELEPLOT_FLAG_DEFAULT) {
     int64_t timeStamp = nowMs + millis_offset_;
     updateData(mshape.getName(), timeStamp, NULL, NULL, flags, "", mshape);
   }
 
-  void log(std::string const &log) {
+  void log(const std::string& log) {
     int64_t nowMs = std::chrono::time_point_cast<std::chrono::milliseconds>(
                         std::chrono::system_clock::now())
                         .time_since_epoch()
@@ -349,7 +346,7 @@ public:
     emit(">" + std::to_string(nowMs) + ":" + log + suffix_);
   }
 
-  void log_ms(std::string const &log, unsigned long nowMs) {
+  void log_ms(const std::string& log, unsigned long nowMs) {
     int64_t timeStamp = nowMs + millis_offset_;
     // emit(prefix_ + std::to_string(timeStamp) + ":" + log + suffix_);
     emit(">" + std::to_string(timeStamp) + ":" + log + suffix_);
@@ -357,10 +354,10 @@ public:
 
 private:
   template <typename T1, typename T2, typename T3>
-  void updateData(std::string const &key, T1 const &valueX, T2 const &valueY,
-                  T3 const &valueZ, std::string const &flags,
+  void updateData(const std::string& key, const T1& valueX, const T2& valueY,
+                  const T3& valueZ, const std::string& flags,
                   std::string unit = "",
-                  ShapeTeleplot const &mshape = ShapeTeleplot()) {
+                  const ShapeTeleplot& mshape = ShapeTeleplot()) {
     // Format
     std::string valueStr = formatValues(valueX, valueY, valueZ, mshape, flags);
 
@@ -375,9 +372,9 @@ private:
   }
 
   template <typename T1, typename T2, typename T3>
-  std::string formatValues(T1 const &valueX, T2 const &valueY, T3 const &valueZ,
-                           ShapeTeleplot const &mshape,
-                           std::string const &flags) {
+  std::string formatValues(const T1& valueX, const T2& valueY, const T3& valueZ,
+                           const ShapeTeleplot& mshape,
+                           const std::string& flags) {
     if (!mshape.getName().empty()) {
       // valueX contains the timestamp
       return fmt::format("{}:{}", valueX, mshape.toString());
@@ -390,16 +387,15 @@ private:
     }
   }
 
-  std::string formatPacket(std::string const &key, std::string const &values,
-                           std::string const &flags, std::string unit,
+  std::string formatPacket(const std::string& key, const std::string& values,
+                           const std::string& flags, std::string unit,
                            bool is3D = false) {
     std::string unitFormatted = (unit == "") ? "" : section_ + unit;
-    // std::string unitFormatted = (unit == "") ? "" : "\xA7" + unit;
     return fmt::format("{}{}{}:{}{}|{}{}", prefix_, is3D ? "3D|" : "", key, values,
                   unitFormatted, flags, suffix_);
   }
 
-  void emit(std::string const &data) {
+  void emit(const std::string& data) {
     if (!enabled_)
       return;
     if (writeCallback_) {
@@ -428,8 +424,8 @@ private:
   }
 
 #ifdef TELEPLOT_USE_BUFFERING
-  void buffer(std::string const &key, std::string const &values,
-              std::string const &flags, std::string unit, bool is3D = false) {
+  void buffer(const std::string& key, const std::string& values,
+              const std::string& flags, std::string unit, bool is3D = false) {
     // Make sure buffer exists
     if (bufferingMap_.find(key) == bufferingMap_.end()) {
       bufferingMap_[key] = "";
@@ -448,7 +444,7 @@ private:
     flushBuffer(key, flags, unit, false, is3D);
   }
 
-  void flushBuffer(std::string const &key, std::string const &flags,
+  void flushBuffer(const std::string& key, const std::string& flags,
                    std::string unit, bool force, bool is3D = false) {
     // Flush the buffer if the frequency is reached
     int64_t nowUs = std::chrono::time_point_cast<std::chrono::microseconds>(
