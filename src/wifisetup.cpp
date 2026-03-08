@@ -41,6 +41,19 @@ void websocket_loop();
 String macAddress;
 JsonDocument wifiCredentials;
 
+const char* ntpServer = "pool.ntp.org";
+const long  gmtOffset_sec = 0;       // your offset
+const int   daylightOffset_sec = 0;
+
+void printLocalTime() {
+  struct tm timeinfo;
+  if (!getLocalTime(&timeinfo)) {
+    Serial.println("Failed to obtain time");
+    return;
+  }
+  Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
+}
+
 void getMacAddress(String &macStr) {
     // Get MAC address
     uint8_t mac[6];
@@ -303,6 +316,8 @@ void wifi_loop() {
                         // on the ESP-Hosted co-processor
                         ESP.restart();
                     }
+                    configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+                    printLocalTime();
                     mqtt.begin();
                 }
                 break;

@@ -35,7 +35,8 @@ public:
     return callback_(data, len);
   }
 
-  const char* getPrefix() const override { return ">"; }
+  // const char* getPrefix() const override { return ">"; }
+  const char* getPrefix() const override { return ""; }
   const char* getSuffix() const override { return "\n"; }
   char getSectionSeparator() const override { return 0xA7; }
   bool isEnabled() const override { return enabled_; }
