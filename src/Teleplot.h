@@ -252,6 +252,7 @@ public:
   template <typename T>
   void update(const std::string& key, const T& value, std::string unit = "",
               std::string flags = TELEPLOT_FLAG_DEFAULT) {
+    if (!enabled_) return;
     int64_t nowUs = std::chrono::time_point_cast<std::chrono::microseconds>(
                         std::chrono::system_clock::now())
                         .time_since_epoch()
@@ -264,6 +265,7 @@ public:
   void update_ms(const std::string& key, unsigned long nowMs, const T& value,
                  std::string unit = "",
                  std::string flags = TELEPLOT_FLAG_DEFAULT) {
+    if (!enabled_) return;
     int64_t timeStamp = nowMs + millis_offset_;
     updateData(key, timeStamp, value, 0, flags, unit);
   }
@@ -271,6 +273,7 @@ public:
   template <typename T1, typename T2>
   void update2D(const std::string& key, const T1& valueX, const T2& valueY,
                 std::string flags = TELEPLOT_FLAG_2D) {
+    if (!enabled_) return;
     int64_t nowUs = std::chrono::time_point_cast<std::chrono::microseconds>(
                         std::chrono::system_clock::now())
                         .time_since_epoch()
@@ -283,13 +286,14 @@ public:
   void update2D_ms(const std::string& key, unsigned long nowMs,
                    const T1& valueX, const T2& valueY,
                    std::string flags = TELEPLOT_FLAG_2D) {
+    if (!enabled_) return;
     int64_t timeStamp = nowMs + millis_offset_;
     updateData(key, valueX, valueY, timeStamp, flags);
   }
 
   void update3D(const ShapeTeleplot& mshape,
                 std::string flags = TELEPLOT_FLAG_DEFAULT) {
-
+    if (!enabled_) return;
     int64_t nowUs = std::chrono::time_point_cast<std::chrono::microseconds>(
                         std::chrono::system_clock::now())
                         .time_since_epoch()
@@ -300,6 +304,7 @@ public:
 
   void update3D_ms(const ShapeTeleplot& mshape, unsigned long nowMs,
                    std::string flags = TELEPLOT_FLAG_DEFAULT) {
+    if (!enabled_) return;
     int64_t timeStamp = nowMs + millis_offset_;
     updateData(mshape.getName(), timeStamp, NULL, NULL, flags, "", mshape);
   }

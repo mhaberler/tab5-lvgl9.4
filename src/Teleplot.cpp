@@ -57,7 +57,7 @@ void Teleplot::begin(WriteCallback callback, int64_t millis_offset, bool enabled
 }
 
 void Teleplot::emit(const std::string& data) {
-  if (!backend_ || !enabled_) {
+  if (!backend_) {
     return;
   }
   backend_->sendData(reinterpret_cast<const uint8_t*>(data.c_str()), data.size());
@@ -79,7 +79,7 @@ std::string Teleplot::formatPacket(const std::string& key, const std::string& va
 }
 
 void Teleplot::log(const std::string& log) {
-  if (!backend_) {
+  if (!enabled_ || !backend_) {
     return;
   }
   int64_t nowMs = std::chrono::time_point_cast<std::chrono::milliseconds>(
@@ -95,7 +95,7 @@ void Teleplot::log(const std::string& log) {
 }
 
 void Teleplot::log_ms(const std::string& log, unsigned long nowMs) {
-  if (!backend_) {
+  if (!enabled_ || !backend_) {
     return;
   }
   int64_t timeStamp = nowMs + millis_offset_;

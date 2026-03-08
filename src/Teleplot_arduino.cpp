@@ -5,7 +5,7 @@
 // Static member initialization
 WiFiUDP TeleplotArduinoBackend::udp_;
 
-TeleplotArduinoBackend::TeleplotArduinoBackend() : enabled_(false), use_stream_(false) {}
+TeleplotArduinoBackend::TeleplotArduinoBackend() : use_stream_(false) {}
 
 void TeleplotArduinoBackend::begin(IPAddress address, uint16_t port) {
   address_ = address;
