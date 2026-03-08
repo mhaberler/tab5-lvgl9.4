@@ -21,27 +21,22 @@ public:
    * Initialize backend for UDP transmission to a remote host.
    * @param address Target hostname or IP address.
    * @param port Target UDP port (default: 47269).
-   * @param enabled Enable the backend (default: true).
    */
-  void begin(const std::string& address, unsigned int port = 47269, bool enabled = true);
+  void begin(const std::string& address, unsigned int port = 47269);
 
   /**
    * Initialize backend for file descriptor (stdout, stderr, or socket).
    * @param fd File descriptor to write to (default: 1 for stdout).
-   * @param enabled Enable the backend (default: true).
    */
-  void begin(int fd, bool enabled = true);
+  void begin(int fd);
 
   // TeleplotBackend interface
   int sendData(const uint8_t* data, size_t len) override;
   const char* getPrefix() const override { return ">"; }
   const char* getSuffix() const override { return "\n"; }
   char getSectionSeparator() const override { return 0xA7; }
-  bool isEnabled() const override { return enabled_; }
-  void setEnabled(bool enabled) override { enabled_ = enabled; }
 
 private:
-  bool enabled_ = false;
   int mode_ = -1;  // -1=uninitialized, 0=UDP socket, 1=file descriptor
   int sockfd_ = -1;
   int fd_ = -1;

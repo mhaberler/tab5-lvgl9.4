@@ -7,27 +7,21 @@ WiFiUDP TeleplotArduinoBackend::udp_;
 
 TeleplotArduinoBackend::TeleplotArduinoBackend() : enabled_(false), use_stream_(false) {}
 
-void TeleplotArduinoBackend::begin(IPAddress address, uint16_t port, bool enabled) {
+void TeleplotArduinoBackend::begin(IPAddress address, uint16_t port) {
   address_ = address;
   port_ = port;
-  enabled_ = enabled;
   use_stream_ = false;
   stream_ = nullptr;
 }
 
-void TeleplotArduinoBackend::begin(Stream* stream, bool enabled) {
+void TeleplotArduinoBackend::begin(Stream* stream) {
   stream_ = stream;
-  enabled_ = enabled;
   use_stream_ = true;
   address_ = IPAddress();
   port_ = -1;
 }
 
 int TeleplotArduinoBackend::sendData(const uint8_t* data, size_t len) {
-  if (!enabled_) {
-    return 0;
-  }
-
   if (use_stream_ && stream_) {
     return stream_->write(data, len);
   }

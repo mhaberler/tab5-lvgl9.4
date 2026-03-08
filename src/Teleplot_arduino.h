@@ -22,27 +22,22 @@ public:
    * Initialize backend for UDP transmission to a remote address.
    * @param address Target IP address.
    * @param port Target UDP port (default: 47269).
-   * @param enabled Enable the backend (default: true).
    */
-  void begin(IPAddress address, uint16_t port = 47269, bool enabled = true);
+  void begin(IPAddress address, uint16_t port = 47269);
 
   /**
    * Initialize backend for Stream (serial, etc.) transmission.
    * @param stream Pointer to Stream object (e.g., Serial).
-   * @param enabled Enable the backend (default: true).
    */
-  void begin(Stream* stream, bool enabled = true);
+  void begin(Stream* stream);
 
   // TeleplotBackend interface
   int sendData(const uint8_t* data, size_t len) override;
   const char* getPrefix() const override { return ""; }
   const char* getSuffix() const override { return ""; }
   char getSectionSeparator() const override { return 0xA7; }
-  bool isEnabled() const override { return enabled_; }
-  void setEnabled(bool enabled) override { enabled_ = enabled; }
 
 private:
-  bool enabled_ = false;
   bool use_stream_ = false;
   Stream* stream_ = nullptr;
   IPAddress address_;

@@ -15,44 +15,49 @@ Teleplot::~Teleplot() = default;
 #ifdef EMBEDDED_TELEPLOT
 void Teleplot::begin(IPAddress address, uint16_t port, int64_t millis_offset, bool enabled) {
   auto arduino_backend = std::make_unique<TeleplotArduinoBackend>();
-  arduino_backend->begin(address, port, enabled);
+  arduino_backend->begin(address, port);
   backend_ = std::move(arduino_backend);
   millis_offset_ = millis_offset;
+  enabled_ = enabled;
 }
 
 void Teleplot::begin(Stream* stream, int64_t millis_offset, bool enabled) {
   auto arduino_backend = std::make_unique<TeleplotArduinoBackend>();
-  arduino_backend->begin(stream, enabled);
+  arduino_backend->begin(stream);
   backend_ = std::move(arduino_backend);
   millis_offset_ = millis_offset;
+  enabled_ = enabled;
 }
 #endif
 
 #ifndef EMBEDDED_TELEPLOT
 void Teleplot::begin(const std::string& address, unsigned int port, bool enabled) {
   auto unix_backend = std::make_unique<TeleplotUnixBackend>();
-  unix_backend->begin(address, port, enabled);
+  unix_backend->begin(address, port);
   backend_ = std::move(unix_backend);
   millis_offset_ = 0;
+  enabled_ = enabled;
 }
 
 void Teleplot::begin(int fd, bool enabled) {
   auto unix_backend = std::make_unique<TeleplotUnixBackend>();
-  unix_backend->begin(fd, enabled);
+  unix_backend->begin(fd);
   backend_ = std::move(unix_backend);
   millis_offset_ = 0;
+  enabled_ = enabled;
 }
 #endif
 
 void Teleplot::begin(WriteCallback callback, int64_t millis_offset, bool enabled) {
   auto callback_backend = std::make_unique<TeleplotCallbackBackend>();
-  callback_backend->begin(callback, enabled);
+  callback_backend->begin(callback);
   backend_ = std::move(callback_backend);
   millis_offset_ = millis_offset;
+  enabled_ = enabled;
 }
 
 void Teleplot::emit(const std::string& data) {
-  if (!backend_) {
+  if (!backend_ || !enabled_) {
     return;
   }
   backend_->sendData(reinterpret_cast<const uint8_t*>(data.c_str()), data.size());

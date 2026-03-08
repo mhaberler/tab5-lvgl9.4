@@ -308,6 +308,16 @@ public:
 
   void log_ms(const std::string& log, unsigned long nowMs);
 
+  /**
+   * Check if Teleplot is enabled.
+   */
+  bool isEnabled() const { return enabled_; }
+
+  /**
+   * Enable or disable Teleplot transmission.
+   */
+  void setEnabled(bool enabled) { enabled_ = enabled; }
+
 private:
   template <typename T1, typename T2, typename T3>
   void updateData(const std::string& key, const T1& valueX, const T2& valueY,
@@ -398,6 +408,7 @@ private:
 
   // Backend instance
   std::unique_ptr<TeleplotBackend> backend_;
+  bool enabled_ = false;
   int64_t millis_offset_ = 0;
   int64_t lastBufferingFlushTimestampUs_ = 0;
 };

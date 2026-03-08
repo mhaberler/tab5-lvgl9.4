@@ -35,16 +35,6 @@ public:
    * Get the section separator character (e.g., "§" for Arduino, "\xA7" for Unix).
    */
   virtual char getSectionSeparator() const = 0;
-
-  /**
-   * Check if the backend is enabled.
-   */
-  virtual bool isEnabled() const = 0;
-
-  /**
-   * Enable or disable the backend.
-   */
-  virtual void setEnabled(bool enabled) = 0;
 };
 
 #endif // TELEPLOT_BACKEND_H

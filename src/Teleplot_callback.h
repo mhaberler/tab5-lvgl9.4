@@ -20,16 +20,14 @@ public:
   /**
    * Initialize backend with a custom write callback.
    * @param callback Function that writes data and returns bytes written.
-   * @param enabled Enable the backend (default: true).
    */
-  void begin(WriteCallback callback, bool enabled = true) {
+  void begin(WriteCallback callback) {
     callback_ = callback;
-    enabled_ = enabled;
   }
 
   // TeleplotBackend interface
   int sendData(const uint8_t* data, size_t len) override {
-    if (!enabled_ || !callback_) {
+    if (!callback_) {
       return 0;
     }
     return callback_(data, len);
@@ -39,12 +37,9 @@ public:
   const char* getPrefix() const override { return ""; }
   const char* getSuffix() const override { return "\n"; }
   char getSectionSeparator() const override { return 0xA7; }
-  bool isEnabled() const override { return enabled_; }
-  void setEnabled(bool enabled) override { enabled_ = enabled; }
 
 private:
   WriteCallback callback_;
-  bool enabled_ = false;
 };
 
 #endif // TELEPLOT_CALLBACK_H

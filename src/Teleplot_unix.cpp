@@ -17,10 +17,9 @@ TeleplotUnixBackend::~TeleplotUnixBackend() {
   }
 }
 
-void TeleplotUnixBackend::begin(const std::string& address, unsigned int port, bool enabled) {
+void TeleplotUnixBackend::begin(const std::string& address, unsigned int port) {
   address_ = address;
   port_ = port;
-  enabled_ = enabled;
   mode_ = 0;  // UDP socket mode
 
   // Create UDP socket
@@ -35,18 +34,13 @@ void TeleplotUnixBackend::begin(const std::string& address, unsigned int port, b
   serv_addr_.sin_addr.s_addr = inet_addr(address_.c_str());
 }
 
-void TeleplotUnixBackend::begin(int fd, bool enabled) {
+void TeleplotUnixBackend::begin(int fd) {
   fd_ = fd;
-  enabled_ = enabled;
   mode_ = 1;  // File descriptor mode
   sockfd_ = -1;
 }
 
 int TeleplotUnixBackend::sendData(const uint8_t* data, size_t len) {
-  if (!enabled_) {
-    return 0;
-  }
-
   if (mode_ == 0 && sockfd_ >= 0) {
     // UDP socket mode
     ssize_t sent = sendto(sockfd_, data, len, 0,
