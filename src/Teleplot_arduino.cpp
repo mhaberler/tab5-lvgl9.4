@@ -1,4 +1,4 @@
-#ifdef EMBEDDED_TELEPLOT
+#ifdef TELEPLOT_ARDUINO
 
 #include "Teleplot_arduino.h"
 
@@ -37,4 +37,4 @@ int TeleplotArduinoBackend::sendData(const uint8_t* data, size_t len) {
   return 0;
 }
 
-#endif // EMBEDDED_TELEPLOT
+#endif // TELEPLOT_ARDUINO

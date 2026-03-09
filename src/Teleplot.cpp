@@ -2,7 +2,7 @@
 #include "Teleplot_backend.h"
 #include "Teleplot_callback.h"
 
-#ifdef EMBEDDED_TELEPLOT
+#ifdef TELEPLOT_ARDUINO
 #include "Teleplot_arduino.h"
 #else
 #include "Teleplot_unix.h"
@@ -12,7 +12,7 @@ Teleplot::Teleplot() : backend_(nullptr), millis_offset_(0) {}
 
 Teleplot::~Teleplot() = default;
 
-#ifdef EMBEDDED_TELEPLOT
+#ifdef TELEPLOT_ARDUINO
 void Teleplot::begin(IPAddress address, uint16_t port, int64_t millis_offset, bool enabled) {
   auto arduino_backend = std::make_unique<TeleplotArduinoBackend>();
   arduino_backend->begin(address, port);
@@ -30,7 +30,7 @@ void Teleplot::begin(Stream* stream, int64_t millis_offset, bool enabled) {
 }
 #endif
 
-#ifndef EMBEDDED_TELEPLOT
+#ifndef TELEPLOT_ARDUINO
 void Teleplot::begin(const std::string& address, unsigned int port, bool enabled) {
   auto unix_backend = std::make_unique<TeleplotUnixBackend>();
   unix_backend->begin(address, port);

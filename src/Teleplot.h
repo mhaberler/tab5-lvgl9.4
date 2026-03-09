@@ -5,12 +5,12 @@
 #define TELEPLOT_H
 
 // Platform-specific headers must come first for type declarations
-#ifdef EMBEDDED_TELEPLOT
+#ifdef TELEPLOT_ARDUINO
 #include <Arduino.h>
 #include <IPAddress.h>
 #endif
 
-#ifndef EMBEDDED_TELEPLOT
+#ifndef TELEPLOT_ARDUINO
 #include <string>
 #endif
 
@@ -22,8 +22,17 @@
 #include <cstdint>
 #include "Teleplot_backend.h"
 
-// Enable/Disable implementation optimisations:
-#define TELEPLOT_USE_BUFFERING // Allows to group updates sent, but will use dynamic buffer map
+#ifndef TELEPLOT_USE_BUFFERING
+#define TELEPLOT_USE_BUFFERING 1 // Allows to group updates sent, but will use dynamic buffer map
+#endif
+
+#ifndef TELEPLOT_BUFFER_SIZE
+#define TELEPLOT_BUFFER_SIZE 1432
+#endif
+
+#ifndef TELEPLOT_FLUSH_FREQUENCY
+#define TELEPLOT_FLUSH_FREQUENCY 5
+#endif
 
 // Default flags
 #define TELEPLOT_FLAG_DEFAULT ""
@@ -223,7 +232,7 @@ public:
 
   // Platform-specific initialization methods
 
-#ifdef EMBEDDED_TELEPLOT
+#ifdef TELEPLOT_ARDUINO
   // Arduino backend with UDP
   void begin(IPAddress address, uint16_t port = 47269,
              int64_t millis_offset = 0, bool enabled = true);
@@ -232,7 +241,7 @@ public:
   void begin(Stream* stream, int64_t millis_offset = 0, bool enabled = true);
 #endif
 
-#ifndef EMBEDDED_TELEPLOT
+#ifndef TELEPLOT_ARDUINO
   // Unix backend with UDP socket
   void begin(const std::string& address, unsigned int port = 47269, bool enabled = true);
 
@@ -335,7 +344,7 @@ private:
     // Emit
     bool is3D = !mshape.getName().empty();
 
-#ifdef TELEPLOT_USE_BUFFERING
+#if TELEPLOT_USE_BUFFERING
     buffer(key, valueStr, flags, unit, is3D);
 #else
     emit(formatPacket(key, valueStr, flags, unit, is3D));
@@ -364,7 +373,7 @@ private:
 
   void emit(const std::string& data);
 
-#ifdef TELEPLOT_USE_BUFFERING
+#if TELEPLOT_USE_BUFFERING
   void buffer(const std::string& key, const std::string& values,
               const std::string& flags, std::string unit, bool is3D = false) {
     // Make sure buffer exists
@@ -399,17 +408,14 @@ private:
       bufferingFlushTimestampsUs_[key] = nowUs;
     }
   }
-  unsigned int bufferingFrequencyHz_ = 5;
+  unsigned int bufferingFrequencyHz_ = TELEPLOT_FLUSH_FREQUENCY;
 
   std::map<std::string, std::string> bufferingMap_;
 
   std::map<std::string, int64_t> bufferingFlushTimestampsUs_;
-  size_t maxBufferingSize_ = 1432; // from
-// https://github.com/statsd/statsd/blob/master/docs/metric_types.md
+  size_t maxBufferingSize_ = TELEPLOT_BUFFER_SIZE;
 #endif
-#ifdef TELEPLOT_USE_FREQUENCY
-  std::map<std::string, int64_t> updateTimestampsUs_;
-#endif
+
 
   // Backend instance
   std::unique_ptr<TeleplotBackend> backend_;

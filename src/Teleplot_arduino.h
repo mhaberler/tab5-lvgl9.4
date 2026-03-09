@@ -1,7 +1,7 @@
 #ifndef TELEPLOT_ARDUINO_H
 #define TELEPLOT_ARDUINO_H
 
-#ifdef EMBEDDED_TELEPLOT
+#ifdef TELEPLOT_ARDUINO
 
 #include "Teleplot_backend.h"
 #include <Arduino.h>
@@ -45,6 +45,6 @@ private:
   static WiFiUDP udp_;  // Shared UDP socket across all instances
 };
 
-#endif // EMBEDDED_TELEPLOT
+#endif // TELEPLOT_ARDUINO
 
 #endif // TELEPLOT_ARDUINO_H

@@ -1,4 +1,4 @@
-#ifndef EMBEDDED_TELEPLOT
+#ifndef TELEPLOT_ARDUINO
 
 #include "Teleplot_unix.h"
 #include <arpa/inet.h>
@@ -57,4 +57,4 @@ int TeleplotUnixBackend::sendData(const uint8_t* data, size_t len) {
   return 0;
 }
 
-#endif // !EMBEDDED_TELEPLOT
+#endif // !TELEPLOT_ARDUINO

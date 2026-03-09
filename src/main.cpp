@@ -10,7 +10,7 @@
 #include <SD_MMC.h>
 #include "BLEScanner.h"
 
-#ifdef EMBEDDED_TELEPLOT
+#ifdef TELEPLOT_ARDUINO
     #include "Teleplot.h"
     Teleplot teleplot;
     float i;
@@ -76,6 +76,7 @@ void setup() {
     bleScanner.begin(4096, 15000, 100, 99, 4096, 1, RBMEM);
 #endif
     teleplot.begin(websocketWriteCallback);
+    // teleplot.begin(&Serial);
 }
 
 void loop() {
@@ -134,7 +135,7 @@ void loop() {
 #endif
 
         static unsigned long lastTpTime = 0;
-        if (now - lastTpTime >= 200) {
+        if (now - lastTpTime >= 50) {
             teleplot.update("sin", sin(i), "");
             teleplot.update("cos", cos(i), "");
             i += 0.1;

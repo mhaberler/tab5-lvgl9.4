@@ -1,7 +1,7 @@
 #ifndef TELEPLOT_UNIX_H
 #define TELEPLOT_UNIX_H
 
-#ifndef EMBEDDED_TELEPLOT
+#ifndef TELEPLOT_ARDUINO
 
 #include "Teleplot_backend.h"
 #include <string>
@@ -45,6 +45,6 @@ private:
   struct sockaddr_in serv_addr_;
 };
 
-#endif // !EMBEDDED_TELEPLOT
+#endif // !TELEPLOT_ARDUINO
 
 #endif // TELEPLOT_UNIX_H
