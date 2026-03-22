@@ -30,7 +30,7 @@ void Teleplot::begin(Stream* stream, int64_t millis_offset, bool enabled) {
 }
 #endif
 
-#ifndef TELEPLOT_ARDUINO
+#ifdef TELEPLOT_UNIX
 void Teleplot::begin(const std::string& address, unsigned int port, bool enabled) {
   auto unix_backend = std::make_unique<TeleplotUnixBackend>();
   unix_backend->begin(address, port);

@@ -1,4 +1,4 @@
-#ifndef TELEPLOT_ARDUINO
+#ifdef TELEPLOT_UNIX
 
 #include "Teleplot_unix.h"
 #include <arpa/inet.h>

@@ -1,7 +1,7 @@
 #ifndef TELEPLOT_UNIX_H
 #define TELEPLOT_UNIX_H
 
-#ifndef TELEPLOT_ARDUINO
+#ifdef TELEPLOT_UNIX
 
 #include "Teleplot_backend.h"
 #include <string>

@@ -75,8 +75,10 @@ void setup() {
 #ifdef USE_BLESCANNER
     bleScanner.begin(4096, 15000, 100, 99, 4096, 1, RBMEM);
 #endif
+#ifdef TELEPLOT_ARDUINO
     teleplot.begin(websocketWriteCallback);
     // teleplot.begin(&Serial);
+#endif
 }
 
 void loop() {
@@ -133,6 +135,7 @@ void loop() {
             }
         }
 #endif
+#ifdef TELEPLOT_ARDUINO
 
         static unsigned long lastTpTime = 0;
         if (now - lastTpTime >= 50) {
@@ -140,6 +143,7 @@ void loop() {
             teleplot.update("cos", cos(i), "");
             i += 0.1;
         }
+#endif
         mqtt.loop();
     }
     wifi_loop();
