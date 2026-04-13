@@ -5,6 +5,7 @@
 #include <Dps3xx.h>
 #include <Adafruit_INA228.h>
 #include "i2cio.hpp"
+#include "Adafruit_INA3221.h"
 
 Adafruit_BMP5xx bmp581; // Create BMP5xx object
 bmp5xx_powermode_t desiredMode = BMP5XX_POWERMODE_NORMAL;
@@ -17,6 +18,8 @@ LPS22DFSensor *lps22;
 Dps3xx Dps3xxPressureSensor = Dps3xx();
 
 Adafruit_INA228 ina228 = Adafruit_INA228();
+
+Adafruit_INA3221 ina3221;
 
 bool bmp581_init(TwoWire& wire, uint8_t address ) {
     if (!bmp581.begin(address, &wire)) {
@@ -80,6 +83,29 @@ void dps368_init(TwoWire& wire, uint8_t address ) {
     }
 }
 
+
+bool   ina3221_init(TwoWire& wire, uint8_t address ) {
+    if (!ina3221.begin(0x40, &Wire)) { // can use other I2C addresses or buses
+        log_e("INA3221 not connected");
+        return false;
+    }
+    ina3221.setAveragingMode(INA3221_AVG_16_SAMPLES);
+    // Set shunt resistances for all channels
+    for (uint8_t i = 0; i < 3; i++) {
+        ina3221.setShuntResistance(i, 0.100);
+    }
+    //   ina3221.setPowerValidLimits(3.0 /* lower limit */, 15.0 /* upper limit */);
+
+    // Display voltage and current (in mA) for all three channels
+    for (uint8_t i = 0; i < 3; i++) {
+        float voltage = ina3221.getBusVoltage(i);
+        float current = ina3221.getCurrentAmps(i) * 1000; // Convert to mA
+        log_i("ina3221 %d:  %.2fV %.1f mA", voltage, current);
+    }
+    return true;
+}
+
+
 bool ina228_init(TwoWire& wire, uint8_t address ) {
     if (!ina228.begin(address, &wire)) {
         log_e("INA228 not connected");
@@ -93,7 +119,7 @@ bool ina228_init(TwoWire& wire, uint8_t address ) {
     for (int i = 0; i < 10; i++) {
         float V = ina228.getBusVoltage_V();
         float mA = ina228.getCurrent_mA();
-        log_i("INA228 %f V %f mA", V, mA);
+        log_i("INA228 %d: %f V %f mA", i, V, mA);
         delay(100);
     }
     return true;
@@ -106,5 +132,6 @@ void i2c_init(TwoWire &wire) {
     lps22_init(wire, LPS22DF_I2C_ADD_H);
     dps368_init(wire, 0x77);
     ina228_init(wire, 0x40);
+    ina3221_init(wire, 0x40);
 }
 
