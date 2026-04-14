@@ -45,7 +45,7 @@ bool bmp581_init(TwoWire& wire, uint8_t address ) {
     for (int i = 0; i < 10; i++) {
         // Get pressure event using unified sensor API
         if (bmp_pressure->getEvent(&pressure_event)) {
-            log_i("BMP581  %f  hPa", pressure_event.pressure);
+            log_e("BMP581  %f  hPa", pressure_event.pressure);
         } else {
             log_e("Failed to get pressure event");
         }
@@ -62,7 +62,7 @@ void lps22_init(TwoWire& wire, uint8_t address ) {
     for (int i = 0; i < 10; i++) {
         float pressure;
         lps22->GetPressure(&pressure);
-        log_i("LPS22DF  %f  hPa", pressure);
+        log_e("LPS22DF  %f  hPa", pressure);
         delay(100);
     }
 }
@@ -78,7 +78,7 @@ void dps368_init(TwoWire& wire, uint8_t address ) {
         int16_t ret;
         ret = Dps3xxPressureSensor.measureTempOnce(temperature, oversampling);
         ret = Dps3xxPressureSensor.measurePressureOnce(pressure, oversampling);
-        log_i("DPS368  %f  hPa", pressure/100.0);
+        log_e("DPS368  %f  hPa", pressure/100.0);
         delay(100);
     }
 }
@@ -100,7 +100,7 @@ bool   ina3221_init(TwoWire& wire, uint8_t address ) {
     for (uint8_t i = 0; i < 3; i++) {
         float voltage = ina3221.getBusVoltage(i);
         float current = ina3221.getCurrentAmps(i) * 1000; // Convert to mA
-        log_i("ina3221 %d:  %.2fV %.1f mA", voltage, current);
+        log_e("ina3221 %d:  %.2fV %.1f mA", voltage, current);
     }
     return true;
 }
@@ -119,7 +119,7 @@ bool ina228_init(TwoWire& wire, uint8_t address ) {
     for (int i = 0; i < 10; i++) {
         float V = ina228.getBusVoltage_V();
         float mA = ina228.getCurrent_mA();
-        log_i("INA228 %d: %f V %f mA", i, V, mA);
+        log_e("INA228 %d: %f V %f mA", i, V, mA);
         delay(100);
     }
     return true;
@@ -127,7 +127,6 @@ bool ina228_init(TwoWire& wire, uint8_t address ) {
 
 
 void i2c_init(TwoWire &wire) {
-    i2c_scan(wire);
     bmp581_init(wire, BMP5XX_ALTERNATIVE_ADDRESS);
     lps22_init(wire, LPS22DF_I2C_ADD_H);
     dps368_init(wire, 0x77);

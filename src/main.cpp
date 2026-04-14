@@ -9,6 +9,8 @@
 #include "ESP_HostedOTA.h"
 #include <SD_MMC.h>
 #include "BLEScanner.h"
+#include "led.hpp"
+#include "i2cio.hpp"
 
 #ifdef TELEPLOT_ARDUINO
     #include "Teleplot.h"
@@ -47,7 +49,13 @@ size_t websocketWriteCallback(const uint8_t* buf, size_t len);
 
 void setup() {
     Serial.begin(115200);
-    delay(3000);
+#if defined(COLOR_LED_PIN)
+    led_setup();
+    led_update(0.1, 0);
+    led_update(0.3, 1);
+    led_update(0.5, 2);
+#endif
+    //delay(3000);
 #if defined(M5UNIFIED)
     auto cfg = M5.config();
     cfg.output_power = true;
@@ -56,11 +64,26 @@ void setup() {
     Wire.end();
     Wire.begin(M5.Ex_I2C.getSDA(), M5.Ex_I2C.getSCL(), 100000);
 #else
-    Wire.begin();
+    Wire.setClock(400000);
+    // Wire.begin(WIRE_SDA, WIRE_SCL, 100000);
+    i2c_scan(Wire);
+
+    Wire1.begin(WIRE1_SDA  , WIRE1_SCL, 400000);
+    i2c_scan(Wire1);
 #endif
 #ifdef USE_I2C_SENSORS
     i2c_init(Wire);
 #endif
+    pinMode(RELAY1_PIN, OUTPUT);
+    pinMode(RELAY2_PIN, OUTPUT);
+    digitalWrite(RELAY1_PIN, HIGH);
+    digitalWrite(RELAY2_PIN, LOW);
+    delay(500);
+    digitalWrite(RELAY1_PIN, LOW);
+    digitalWrite(RELAY2_PIN, HIGH);
+    delay(500);
+    digitalWrite(RELAY1_PIN, HIGH);
+    digitalWrite(RELAY2_PIN, LOW);
 #if defined(HAS_DISPLAY) && defined(M5UNIFIED)
     M5.Display.setRotation(3);
     M5.Display.setBrightness(200);

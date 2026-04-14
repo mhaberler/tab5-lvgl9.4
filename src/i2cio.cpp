@@ -10,11 +10,11 @@ bool i2c_probe(TwoWire &w, uint8_t addr) {
 
 void i2c_scan(TwoWire &w) {
     uint8_t bus = (&w == &Wire) ? 0: 1;
-    log_i("scanning Wire%u", bus);
+    log_e("scanning Wire%u", bus);
     for (auto i = 0; i < 128; i++) {
         w.beginTransmission(i);
         if (w.endTransmission() == 0) {
-            log_i("Wire%u dev at 0x%x", bus, i);
+            log_e("Wire%u dev at 0x%x", bus, i);
         }
     }
 }
