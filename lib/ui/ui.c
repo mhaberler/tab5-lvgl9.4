@@ -90,9 +90,15 @@ void ui_init(void)
         demo_scales[i] = lv_linear_scale_create(scr);
         lv_obj_set_size(demo_scales[i], 150, 720);
         lv_obj_set_pos(demo_scales[i], 10 + i * 160, 0);
+        /* values as passed by Montgolfiere Tab1Page.vue */
         lv_linear_scale_set_confidence_color(demo_scales[i], lv_color_hex(0x4ade80));
-        lv_linear_scale_set_confidence_cross(demo_scales[i], 12);
-        lv_linear_scale_set_caret_offset_pct(demo_scales[i], 30);
+        lv_linear_scale_set_confidence_cross(demo_scales[i], 10);
+        lv_linear_scale_set_confidence_opa(demo_scales[i], (lv_opa_t)(0.8f * LV_OPA_COVER));
+        lv_linear_scale_set_caret_offset_pct(demo_scales[i], i == 0 ? 110 : 105);
+        lv_linear_scale_set_scale_line_pct(demo_scales[i], 30);
+        lv_linear_scale_set_padding(demo_scales[i], 15);
+        lv_linear_scale_set_anim_duration(demo_scales[i], 950);
+        lv_linear_scale_set_indicator_size(demo_scales[i], 20);
         demo_values[i] = 0.0f;
     }
 
@@ -100,11 +106,13 @@ void ui_init(void)
     {
         static const float majors[] = {-1, -0.5f, -0.1f, 0, 0.1f, 0.5f, 1};
         static const float weights[] = {0.1f, 0.1f, 0.3f, 0.3f, 0.1f, 0.1f};
-        static const float minors[] = {-0.09f, -0.08f, -0.07f, -0.06f, -0.04f, -0.03f, -0.02f, -0.01f,
-                                       0.01f,  0.02f,  0.03f,  0.04f,  0.06f,  0.07f,  0.08f,  0.09f};
+        static const float minors[] = {-0.9f, -0.8f, -0.7f, -0.6f, -0.4f, -0.3f, -0.2f,
+                                       -0.09f, -0.08f, -0.07f, -0.06f, -0.04f, -0.03f, -0.02f, -0.01f,
+                                       0.01f,  0.02f,  0.03f,  0.04f,  0.06f,  0.07f,  0.08f,  0.09f,
+                                       0.2f, 0.3f, 0.4f, 0.6f, 0.7f, 0.8f, 0.9f};
         static const float inters[] = {-0.05f, 0.05f};
         lv_linear_scale_set_major_ticks(demo_scales[1], majors, weights, 7);
-        lv_linear_scale_set_minor_ticks(demo_scales[1], minors, 16);
+        lv_linear_scale_set_minor_ticks(demo_scales[1], minors, 30);
         lv_linear_scale_set_intermediate_ticks(demo_scales[1], inters, 2);
     }
     lv_timer_create(demo_tick, 500, NULL);

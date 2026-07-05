@@ -33,6 +33,12 @@ void lv_linear_scale_set_confidence_color(lv_obj_t * obj, lv_color_t color);
 void lv_linear_scale_set_confidence_cross(lv_obj_t * obj, int32_t px);   /* default 20 */
 /* triangle gap from scale line, % of major tick length (20px); default 0 = apex at line */
 void lv_linear_scale_set_caret_offset_pct(lv_obj_t * obj, int32_t pct);
+void lv_linear_scale_set_scale_line_pct(lv_obj_t * obj, int32_t pct);   /* cross-axis line pos %, default 50 */
+void lv_linear_scale_set_padding(lv_obj_t * obj, int32_t px);           /* main-axis end padding, default 50 */
+void lv_linear_scale_set_anim_duration(lv_obj_t * obj, uint32_t ms);    /* default 300 */
+void lv_linear_scale_set_text_offset(lv_obj_t * obj, int32_t px);       /* label offset past tick, default 15 */
+void lv_linear_scale_set_confidence_opa(lv_obj_t * obj, lv_opa_t opa);  /* default LV_OPA_COVER */
+void lv_linear_scale_set_indicator_size(lv_obj_t * obj, int32_t px);    /* default 24 */
 
 void lv_linear_scale_set_value(lv_obj_t * obj, float value, lv_anim_enable_t anim);
 void lv_linear_scale_set_confidence(lv_obj_t * obj, float lower, float upper,
