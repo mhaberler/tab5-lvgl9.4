@@ -12,6 +12,7 @@ to C, developed and verified on M5Stack Tab5 (ESP32-P4, 1280×720).
 | `lib/lv_linear_scale/lv_linear_scale.c` | Widget implementation (`#ifdef LVGL_UI`) |
 | `lib/ui/ui.c` | Demo: two instances + 2 Hz random-walk driver |
 | `src/lv_mem_core_psram.c` | LVGL `LV_STDLIB_CUSTOM` allocator → PSRAM (prerequisite: 256 KB LVGL heap overflowed internal DRAM) |
+| `micropython/lv_linear_scale_sim.py` | MicroPython port for the [LVGL web simulator](https://sim.lvgl.io) (v9.0 MicroPython): paste file into editor, Restart. Composition-based (child rects/labels, `SYMBOL.PLAY` indicator) instead of custom draw; same piecewise math, same two-instance demo |
 
 ## Key concept: weighted segments
 
