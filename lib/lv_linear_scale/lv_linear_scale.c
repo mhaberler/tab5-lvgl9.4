@@ -57,6 +57,13 @@ typedef struct {
     int32_t conf_lo_x100;
     int32_t conf_hi_x100;
 
+    /* style */
+    lv_color_t indicator_color;
+    lv_color_t conf_color;
+    lv_color_t conf_border_color;
+    int32_t conf_cross;      /* confidence box cross-axis px */
+    int32_t caret_pct;       /* triangle gap from line, % of major tick len */
+
     lv_obj_t * obj;
 } lv_linear_scale_t;
 
@@ -153,22 +160,23 @@ static void ls_draw_tick(lv_layer_t * layer, const lv_linear_scale_t * s,
     if(!label) return;
 
     char buf[16];
-    lv_snprintf(buf, sizeof(buf), "%d", (int)v);
+    if(v == (float)(int)v) snprintf(buf, sizeof(buf), "%d", (int)v);
+    else snprintf(buf, sizeof(buf), "%g", (double)v);
 
     lv_draw_label_dsc_t lbl_dsc;
     lv_draw_label_dsc_init(&lbl_dsc);
     lbl_dsc.text = buf;
     lbl_dsc.text_local = 1; /* copy: buf is stack local */
     lbl_dsc.color = LS_COLOR_TEXT;
-    lbl_dsc.font = &lv_font_montserrat_16;
+    lbl_dsc.font = &lv_font_montserrat_20;
 
     lv_area_t txt_area;
     if(s->vertical) {
         /* text right of tick, vertically centered on tick */
         txt_area.x1 = coords->x1 + (int32_t)line_pos + tick_len + LS_TEXT_OFFSET;
-        txt_area.x2 = txt_area.x1 + 50;
-        txt_area.y1 = coords->y1 + (int32_t)pos - 10;
-        txt_area.y2 = txt_area.y1 + 20;
+        txt_area.x2 = txt_area.x1 + 60;
+        txt_area.y1 = coords->y1 + (int32_t)pos - 12;
+        txt_area.y2 = txt_area.y1 + 24;
         lbl_dsc.align = LV_TEXT_ALIGN_LEFT;
     }
     else {
@@ -176,7 +184,7 @@ static void ls_draw_tick(lv_layer_t * layer, const lv_linear_scale_t * s,
         txt_area.x1 = coords->x1 + (int32_t)pos - 25;
         txt_area.x2 = txt_area.x1 + 50;
         txt_area.y1 = coords->y1 + (int32_t)line_pos + tick_len + LS_TEXT_OFFSET;
-        txt_area.y2 = txt_area.y1 + 20;
+        txt_area.y2 = txt_area.y1 + 24;
         lbl_dsc.align = LV_TEXT_ALIGN_CENTER;
     }
     lv_draw_label(layer, &lbl_dsc, &txt_area);
@@ -204,7 +212,7 @@ static void ls_draw_cb(lv_event_t * e)
         lv_draw_line_dsc_t dsc;
         lv_draw_line_dsc_init(&dsc);
         dsc.color = LS_COLOR_LINE;
-        dsc.width = 2;
+        dsc.width = 3;
         dsc.opa = LV_OPA_COVER;
         if(s->vertical) {
             dsc.p1.x = (lv_value_precise_t)(coords.x1 + line_pos);
@@ -221,15 +229,7 @@ static void ls_draw_cb(lv_event_t * e)
         lv_draw_line(layer, &dsc);
     }
 
-    /* 2. ticks: minor, intermediate, major (major last: thicker + label) */
-    for(size_t i = 0; i < s->n_minor; i++)
-        ls_draw_tick(layer, s, &coords, s->minor[i], LS_MINOR_TICK_LEN, LS_COLOR_TICK, 1, false);
-    for(size_t i = 0; i < s->n_inter; i++)
-        ls_draw_tick(layer, s, &coords, s->inter[i], LS_INTER_TICK_LEN, LS_COLOR_TICK, 1, false);
-    for(size_t i = 0; i < s->n_major; i++)
-        ls_draw_tick(layer, s, &coords, s->major[i], LS_MAJOR_TICK_LEN, LS_COLOR_LINE, 2, true);
-
-    /* 3. confidence box (under indicator) */
+    /* 2. confidence box (under ticks so minors stay visible) */
     {
         float lo = ls_scale(s, (float)s->conf_lo_x100 / 100.0f, length);
         float hi = ls_scale(s, (float)s->conf_hi_x100 / 100.0f, length);
@@ -242,41 +242,50 @@ static void ls_draw_cb(lv_event_t * e)
 
         lv_draw_rect_dsc_t dsc;
         lv_draw_rect_dsc_init(&dsc);
-        dsc.bg_color = LS_COLOR_CONFIDENCE;
+        dsc.bg_color = s->conf_color;
         dsc.bg_opa = LS_OPA_CONFIDENCE;
         dsc.radius = 4;
-        dsc.border_color = LS_COLOR_CONF_BORDER;
+        dsc.border_color = s->conf_border_color;
         dsc.border_width = 1;
         dsc.border_opa = LV_OPA_COVER;
 
         lv_area_t box;
         if(s->vertical) {
-            box.x1 = coords.x1 + (int32_t)(line_pos - LS_CONF_CROSS / 2);
-            box.x2 = box.x1 + LS_CONF_CROSS;
+            box.x1 = coords.x1 + (int32_t)(line_pos - s->conf_cross / 2);
+            box.x2 = box.x1 + s->conf_cross;
             box.y1 = coords.y1 + (int32_t)a;
             box.y2 = coords.y1 + (int32_t)b;
         }
         else {
             box.x1 = coords.x1 + (int32_t)a;
             box.x2 = coords.x1 + (int32_t)b;
-            box.y1 = coords.y1 + (int32_t)(line_pos - LS_CONF_CROSS / 2);
-            box.y2 = box.y1 + LS_CONF_CROSS;
+            box.y1 = coords.y1 + (int32_t)(line_pos - s->conf_cross / 2);
+            box.y2 = box.y1 + s->conf_cross;
         }
         lv_draw_rect(layer, &dsc, &box);
     }
 
-    /* 4. indicator triangle, apex touching the scale line */
+    /* 3. ticks over the box: minor, intermediate, major (major last: thicker + label) */
+    for(size_t i = 0; i < s->n_minor; i++)
+        ls_draw_tick(layer, s, &coords, s->minor[i], LS_MINOR_TICK_LEN, LS_COLOR_TICK, 2, false);
+    for(size_t i = 0; i < s->n_inter; i++)
+        ls_draw_tick(layer, s, &coords, s->inter[i], LS_INTER_TICK_LEN, LS_COLOR_TICK, 2, false);
+    for(size_t i = 0; i < s->n_major; i++)
+        ls_draw_tick(layer, s, &coords, s->major[i], LS_MAJOR_TICK_LEN, LS_COLOR_LINE, 3, true);
+
+    /* 4. indicator triangle, apex offset from the scale line */
     {
         float pos = ls_scale(s, (float)s->value_x100 / 100.0f, length);
+        float caret_gap = (float)s->caret_pct / 100.0f * LS_MAJOR_TICK_LEN;
 
         lv_draw_triangle_dsc_t dsc;
         lv_draw_triangle_dsc_init(&dsc);
-        dsc.color = LS_COLOR_INDICATOR;
+        dsc.color = s->indicator_color;
         dsc.opa = LV_OPA_COVER;
 
         if(s->vertical) {
-            /* base left of the line, apex pointing right at the line */
-            float apex_x = coords.x1 + line_pos;
+            /* base left of the line, apex pointing right, gap before line */
+            float apex_x = coords.x1 + line_pos - caret_gap;
             float base_x = apex_x - LS_INDICATOR_SIZE;
             float cy = coords.y1 + pos;
             dsc.p[0].x = (lv_value_precise_t)apex_x;
@@ -287,8 +296,8 @@ static void ls_draw_cb(lv_event_t * e)
             dsc.p[2].y = (lv_value_precise_t)(cy + LS_INDICATOR_SIZE / 2);
         }
         else {
-            /* base above the line, apex pointing down at the line */
-            float apex_y = coords.y1 + line_pos;
+            /* base above the line, apex pointing down, gap before line */
+            float apex_y = coords.y1 + line_pos - caret_gap;
             float base_y = apex_y - LS_INDICATOR_SIZE;
             float cx = coords.x1 + pos;
             dsc.p[0].x = (lv_value_precise_t)cx;
@@ -364,6 +373,11 @@ lv_obj_t * lv_linear_scale_create(lv_obj_t * parent)
     s->value_x100 = 0;
     s->conf_lo_x100 = -100;
     s->conf_hi_x100 = 100;
+    s->indicator_color = LS_COLOR_INDICATOR;
+    s->conf_color = LS_COLOR_CONFIDENCE;
+    s->conf_border_color = LS_COLOR_CONF_BORDER;
+    s->conf_cross = LS_CONF_CROSS;
+    s->caret_pct = 0;
 
     lv_obj_set_user_data(obj, s);
 
@@ -434,6 +448,39 @@ void lv_linear_scale_set_intermediate_ticks(lv_obj_t * obj, const float * ticks,
     if(!s || n > LS_MAX_TICKS) return;
     memcpy(s->inter, ticks, n * sizeof(float));
     s->n_inter = n;
+    lv_obj_invalidate(obj);
+}
+
+void lv_linear_scale_set_indicator_color(lv_obj_t * obj, lv_color_t color)
+{
+    lv_linear_scale_t * s = (lv_linear_scale_t *)lv_obj_get_user_data(obj);
+    if(!s) return;
+    s->indicator_color = color;
+    lv_obj_invalidate(obj);
+}
+
+void lv_linear_scale_set_confidence_color(lv_obj_t * obj, lv_color_t color)
+{
+    lv_linear_scale_t * s = (lv_linear_scale_t *)lv_obj_get_user_data(obj);
+    if(!s) return;
+    s->conf_color = color;
+    s->conf_border_color = lv_color_darken(color, LV_OPA_20);
+    lv_obj_invalidate(obj);
+}
+
+void lv_linear_scale_set_confidence_cross(lv_obj_t * obj, int32_t px)
+{
+    lv_linear_scale_t * s = (lv_linear_scale_t *)lv_obj_get_user_data(obj);
+    if(!s) return;
+    s->conf_cross = px;
+    lv_obj_invalidate(obj);
+}
+
+void lv_linear_scale_set_caret_offset_pct(lv_obj_t * obj, int32_t pct)
+{
+    lv_linear_scale_t * s = (lv_linear_scale_t *)lv_obj_get_user_data(obj);
+    if(!s) return;
+    s->caret_pct = pct;
     lv_obj_invalidate(obj);
 }
 

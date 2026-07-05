@@ -18,6 +18,8 @@ static lv_obj_t *brightness_label;
 
 static lv_obj_t *demo_scales[LS_DEMO_COUNT];
 static float demo_values[LS_DEMO_COUNT];
+/* instance 0: vSpeed-like +-10 domain; instance 1: vAccel-like +-1 domain */
+static const float demo_range[LS_DEMO_COUNT] = {10.0f, 1.0f};
 
 static float frand(float lo, float hi)
 {
@@ -29,12 +31,13 @@ static void demo_tick(lv_timer_t *t)
     LV_UNUSED(t);
     for (int i = 0; i < LS_DEMO_COUNT; i++)
     {
-        /* mean-reverting walk: dwells in stretched +-1 region */
-        demo_values[i] += -0.15f * demo_values[i] + frand(-1.5f, 1.5f);
-        if (demo_values[i] < -10.0f) demo_values[i] = -10.0f;
-        if (demo_values[i] > 10.0f) demo_values[i] = 10.0f;
+        float r = demo_range[i];
+        /* mean-reverting walk: dwells in stretched center region */
+        demo_values[i] += -0.15f * demo_values[i] + frand(-0.15f * r, 0.15f * r);
+        if (demo_values[i] < -r) demo_values[i] = -r;
+        if (demo_values[i] > r) demo_values[i] = r;
 
-        float spread = frand(0.5f, 2.0f);
+        float spread = frand(0.05f * r, 0.2f * r);
         lv_linear_scale_set_value(demo_scales[i], demo_values[i], LV_ANIM_ON);
         lv_linear_scale_set_confidence(demo_scales[i],
                                        demo_values[i] - spread,
@@ -85,9 +88,24 @@ void ui_init(void)
     for (int i = 0; i < LS_DEMO_COUNT; i++)
     {
         demo_scales[i] = lv_linear_scale_create(scr);
-        lv_obj_set_size(demo_scales[i], 130, 720);
-        lv_obj_set_pos(demo_scales[i], 10 + i * 140, 0);
+        lv_obj_set_size(demo_scales[i], 150, 720);
+        lv_obj_set_pos(demo_scales[i], 10 + i * 160, 0);
+        lv_linear_scale_set_confidence_color(demo_scales[i], lv_color_hex(0x4ade80));
+        lv_linear_scale_set_confidence_cross(demo_scales[i], 12);
+        lv_linear_scale_set_caret_offset_pct(demo_scales[i], 30);
         demo_values[i] = 0.0f;
+    }
+
+    /* instance 1: vAccel-like +-1 domain (Vue defaults / 10) */
+    {
+        static const float majors[] = {-1, -0.5f, -0.1f, 0, 0.1f, 0.5f, 1};
+        static const float weights[] = {0.1f, 0.1f, 0.3f, 0.3f, 0.1f, 0.1f};
+        static const float minors[] = {-0.09f, -0.08f, -0.07f, -0.06f, -0.04f, -0.03f, -0.02f, -0.01f,
+                                       0.01f,  0.02f,  0.03f,  0.04f,  0.06f,  0.07f,  0.08f,  0.09f};
+        static const float inters[] = {-0.05f, 0.05f};
+        lv_linear_scale_set_major_ticks(demo_scales[1], majors, weights, 7);
+        lv_linear_scale_set_minor_ticks(demo_scales[1], minors, 16);
+        lv_linear_scale_set_intermediate_ticks(demo_scales[1], inters, 2);
     }
     lv_timer_create(demo_tick, 500, NULL);
 }

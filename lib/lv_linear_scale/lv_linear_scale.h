@@ -27,6 +27,13 @@ void lv_linear_scale_set_major_ticks(lv_obj_t * obj, const float * ticks,
 void lv_linear_scale_set_minor_ticks(lv_obj_t * obj, const float * ticks, size_t n);
 void lv_linear_scale_set_intermediate_ticks(lv_obj_t * obj, const float * ticks, size_t n);
 
+void lv_linear_scale_set_indicator_color(lv_obj_t * obj, lv_color_t color);
+/* border derived automatically: color darkened ~20% */
+void lv_linear_scale_set_confidence_color(lv_obj_t * obj, lv_color_t color);
+void lv_linear_scale_set_confidence_cross(lv_obj_t * obj, int32_t px);   /* default 20 */
+/* triangle gap from scale line, % of major tick length (20px); default 0 = apex at line */
+void lv_linear_scale_set_caret_offset_pct(lv_obj_t * obj, int32_t pct);
+
 void lv_linear_scale_set_value(lv_obj_t * obj, float value, lv_anim_enable_t anim);
 void lv_linear_scale_set_confidence(lv_obj_t * obj, float lower, float upper,
                                     lv_anim_enable_t anim);
