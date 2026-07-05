@@ -74,16 +74,16 @@ void setup() {
 #ifdef USE_I2C_SENSORS
     i2c_init(Wire);
 #endif
-    pinMode(RELAY1_PIN, OUTPUT);
-    pinMode(RELAY2_PIN, OUTPUT);
-    digitalWrite(RELAY1_PIN, HIGH);
-    digitalWrite(RELAY2_PIN, LOW);
-    delay(500);
-    digitalWrite(RELAY1_PIN, LOW);
-    digitalWrite(RELAY2_PIN, HIGH);
-    delay(500);
-    digitalWrite(RELAY1_PIN, HIGH);
-    digitalWrite(RELAY2_PIN, LOW);
+    // pinMode(RELAY1_PIN, OUTPUT);
+    // pinMode(RELAY2_PIN, OUTPUT);
+    // digitalWrite(RELAY1_PIN, HIGH);
+    // digitalWrite(RELAY2_PIN, LOW);
+    // delay(500);
+    // digitalWrite(RELAY1_PIN, LOW);
+    // digitalWrite(RELAY2_PIN, HIGH);
+    // delay(500);
+    // digitalWrite(RELAY1_PIN, HIGH);
+    // digitalWrite(RELAY2_PIN, LOW);
 #if defined(HAS_DISPLAY) && defined(M5UNIFIED)
     M5.Display.setRotation(3);
     M5.Display.setBrightness(200);
