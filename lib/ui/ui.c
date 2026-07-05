@@ -29,7 +29,8 @@ static void demo_tick(lv_timer_t *t)
     LV_UNUSED(t);
     for (int i = 0; i < LS_DEMO_COUNT; i++)
     {
-        demo_values[i] += frand(-1.5f, 1.5f);
+        /* mean-reverting walk: dwells in stretched +-1 region */
+        demo_values[i] += -0.15f * demo_values[i] + frand(-1.5f, 1.5f);
         if (demo_values[i] < -10.0f) demo_values[i] = -10.0f;
         if (demo_values[i] > 10.0f) demo_values[i] = 10.0f;
 
@@ -84,8 +85,8 @@ void ui_init(void)
     for (int i = 0; i < LS_DEMO_COUNT; i++)
     {
         demo_scales[i] = lv_linear_scale_create(scr);
-        lv_obj_set_size(demo_scales[i], 110, 720);
-        lv_obj_set_pos(demo_scales[i], 10 + i * 120, 0);
+        lv_obj_set_size(demo_scales[i], 130, 720);
+        lv_obj_set_pos(demo_scales[i], 10 + i * 140, 0);
         demo_values[i] = 0.0f;
     }
     lv_timer_create(demo_tick, 500, NULL);

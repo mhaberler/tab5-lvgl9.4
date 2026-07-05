@@ -1,5 +1,2 @@
 {
-    "clangd.arguments": [
-        "--query-driver=/Users/mah/.platformio/packages/toolchain-riscv32-esp/**/riscv32-esp-elf-*"
-    ]
 }

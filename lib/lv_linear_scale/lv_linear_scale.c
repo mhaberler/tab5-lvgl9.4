@@ -20,7 +20,7 @@
 #define LS_MAJOR_TICK_LEN     20  /* MAJOR_TICK_LENGTH */
 #define LS_INTER_TICK_LEN     10  /* INTERMEDIATE_TICK_LENGTH */
 #define LS_MINOR_TICK_LEN      5  /* MINOR_TICK_LENGTH */
-#define LS_INDICATOR_SIZE     20  /* indicatorSize */
+#define LS_INDICATOR_SIZE     24  /* indicatorSize */
 #define LS_CONF_CROSS         20  /* confidenceBoxCrossDimension */
 #define LS_TEXT_OFFSET        15  /* majorTickTextOffset */
 #define LS_LINE_PCT           50  /* scaleLinePercent */
@@ -32,7 +32,9 @@
 #define LS_COLOR_TEXT       lv_color_hex(0x333333)
 #define LS_COLOR_INDICATOR  lv_color_hex(0xef4444)
 #define LS_COLOR_CONFIDENCE lv_color_hex(0xa7f3d0)
-#define LS_OPA_CONFIDENCE   ((lv_opa_t)(0.6f * LV_OPA_COVER))
+#define LS_OPA_CONFIDENCE   LV_OPA_COVER
+#define LS_COLOR_CONF_BORDER lv_color_hex(0x34d399)
+#define LS_CONF_MIN_LEN       6  /* min main-axis px so box stays visible */
 
 /**********************
  *      TYPEDEFS
@@ -158,15 +160,15 @@ static void ls_draw_tick(lv_layer_t * layer, const lv_linear_scale_t * s,
     lbl_dsc.text = buf;
     lbl_dsc.text_local = 1; /* copy: buf is stack local */
     lbl_dsc.color = LS_COLOR_TEXT;
-    lbl_dsc.font = &lv_font_montserrat_14;
+    lbl_dsc.font = &lv_font_montserrat_16;
 
     lv_area_t txt_area;
     if(s->vertical) {
         /* text right of tick, vertically centered on tick */
         txt_area.x1 = coords->x1 + (int32_t)line_pos + tick_len + LS_TEXT_OFFSET;
         txt_area.x2 = txt_area.x1 + 50;
-        txt_area.y1 = coords->y1 + (int32_t)pos - 8;
-        txt_area.y2 = txt_area.y1 + 16;
+        txt_area.y1 = coords->y1 + (int32_t)pos - 10;
+        txt_area.y2 = txt_area.y1 + 20;
         lbl_dsc.align = LV_TEXT_ALIGN_LEFT;
     }
     else {
@@ -174,7 +176,7 @@ static void ls_draw_tick(lv_layer_t * layer, const lv_linear_scale_t * s,
         txt_area.x1 = coords->x1 + (int32_t)pos - 25;
         txt_area.x2 = txt_area.x1 + 50;
         txt_area.y1 = coords->y1 + (int32_t)line_pos + tick_len + LS_TEXT_OFFSET;
-        txt_area.y2 = txt_area.y1 + 16;
+        txt_area.y2 = txt_area.y1 + 20;
         lbl_dsc.align = LV_TEXT_ALIGN_CENTER;
     }
     lv_draw_label(layer, &lbl_dsc, &txt_area);
@@ -232,13 +234,20 @@ static void ls_draw_cb(lv_event_t * e)
         float lo = ls_scale(s, (float)s->conf_lo_x100 / 100.0f, length);
         float hi = ls_scale(s, (float)s->conf_hi_x100 / 100.0f, length);
         float a = LV_MIN(lo, hi), b = LV_MAX(lo, hi);
+        if(b - a < LS_CONF_MIN_LEN) { /* keep visible in compressed segments */
+            float c = (a + b) / 2.0f;
+            a = c - LS_CONF_MIN_LEN / 2.0f;
+            b = c + LS_CONF_MIN_LEN / 2.0f;
+        }
 
         lv_draw_rect_dsc_t dsc;
         lv_draw_rect_dsc_init(&dsc);
         dsc.bg_color = LS_COLOR_CONFIDENCE;
         dsc.bg_opa = LS_OPA_CONFIDENCE;
         dsc.radius = 4;
-        dsc.border_width = 0;
+        dsc.border_color = LS_COLOR_CONF_BORDER;
+        dsc.border_width = 1;
+        dsc.border_opa = LV_OPA_COVER;
 
         lv_area_t box;
         if(s->vertical) {
@@ -363,7 +372,7 @@ lv_obj_t * lv_linear_scale_create(lv_obj_t * parent)
     lv_obj_set_style_bg_opa(obj, LV_OPA_COVER, 0);
     lv_obj_set_style_radius(obj, 12, 0);
     lv_obj_set_style_border_width(obj, 0, 0);
-    lv_obj_set_style_pad_all(obj, 0, 0);
+    lv_obj_set_style_pad_all(obj, 8, 0);
     lv_obj_clear_flag(obj, LV_OBJ_FLAG_SCROLLABLE);
 
     lv_obj_add_event_cb(obj, ls_draw_cb, LV_EVENT_DRAW_MAIN, NULL);
