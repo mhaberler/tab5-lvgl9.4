@@ -1,7 +1,13 @@
 CompileFlags:
+  Compiler: /Users/mah/.platformio/packages/toolchain-riscv32-esp/bin/riscv32-esp-elf-gcc
   BuiltinHeaders: QueryDriver
+  Remove:
+    - -fstrict-volatile-bitfields
+    - -fno-tree-switch-conversion
+    - -mabi=*
+    - -march=*
 Diagnostics:
-  Suppress: [pp_expects_filename, unused-includes]
+  Suppress: [pp_expects_filename, unused-includes, drv_unknown_argument, drv_unsupported_option_argument]
 ---
 If:
   PathMatch: .*\.ino
